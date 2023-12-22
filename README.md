@@ -19,7 +19,7 @@ Internally, the references inside the property are serialized as a GUID and an o
 
 ## Usage
 
-The declaration for a serialized scene reference looks like this:
+The declaration for a serialized scene object reference looks like this:
 
 ```csharp
 public SceneObjectReference<SomeObject> sceneReference;

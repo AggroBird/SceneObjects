@@ -7,7 +7,7 @@ The declaration for a serialized scene reference looks like this:
 public SceneObjectReference<SomeObject> sceneReference;
 ```
 
-Scene objects need to derive from the `SceneObject` monobehaviour. This component reads out its own GUID and object ID when placed in a scene, and saves it in OnValidate(). This operation dirties the scene state, but only when the GUID has been changed. Under normal circumstances, this should only happen when a new scene object is created or duplicated. These GUID's and ID's are guaranteed to be persistent, since Unity uses them internally to keep object references in serialization.
+Scene objects need to derive from the `SceneObject` monobehaviour.
 
 ## Example
 
@@ -19,9 +19,13 @@ When the reference points to a scene object and the scene is not currently loade
 
 ![alt text](https://github.com/AggroBird/SceneObjects/blob/main/Documentation~/outsideSceneExample.png?raw=true "Inside scene example")
 
-## Usage
+## Implementation
+
+The `SceneObject` component reads out its own GUID and object ID when placed in a scene, and saves it in OnValidate(). These need to be serialized because they are lost when the scene has started playing. This operation dirties the scene state, but only when the GUID has been changed. Under normal circumstances, this should only happen when a new scene object is created or duplicated. These GUID's and ID's are guaranteed to be persistent, since Unity uses them internally to keep object references in serialization.
 
 Internally, the references inside the property are serialized as a GUID and an object ID. In the case of a prefab, the GUID is that of the prefab asset. In the case of a scene object, the GUID is that of the scene, where the Object ID is used to identify the object within the scene. Prefab references will have an Object ID of 0.
+
+## Usage
 
 Scene objects can only be found when the scene is playing. Scene objects register themselves internally in `SceneObject.Awake()`. After registration they can be found through `SceneObject.FindSceneObjects<T>()`. When using a prefab reference, the function will return all prefab instances in the scene of the same prefab type. When using a reference that points to a scene object (that has an Object ID), the function will return that specific object only. When searching for one particular object, `SceneObject.TryFindSceneObject<T>()` is faster.
 

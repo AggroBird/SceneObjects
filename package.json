@@ -1,0 +1,16 @@
+{
+	"name": "com.aggrobird.sceneobjects",
+	"displayName": "Scene Objects",
+	"version": "1.0.0",
+	"unity": "2022.3",
+	"keywords": ["Utility", "Scene", "Objects"],
+	"category": "Utility",
+	"description": "",
+	"dependencies": {},
+	"author":
+	{
+		"name": "AggroBirdGK",
+		"email": "contact@aggrobird.com",
+		"url": "https://www.aggrobird.com"
+	}
+}

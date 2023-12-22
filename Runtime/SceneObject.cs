@@ -15,8 +15,7 @@ namespace AggroBird.SceneObjects
 
     }
 
-    [DisallowMultipleComponent]
-    public class SceneObject : MonoBehaviour
+    public abstract class SceneObject : MonoBehaviour
     {
         // In the case of a regular scene object, this contains the scene GUID
         // In the case of a scene prefab instance, this contains the prefab GUID
@@ -170,6 +169,7 @@ namespace AggroBird.SceneObjects
 
         private static readonly List<SceneObject> objectsPendingValidation = new();
         private static readonly HashSet<Scene> scenesPendingValidation = new();
+        private bool pendingValidation = false;
         private void ValidateSceneObject(bool isPlaying)
         {
             GameObject go = gameObject;
@@ -260,19 +260,23 @@ namespace AggroBird.SceneObjects
 
             // Validate objects
             scenesPendingValidation.Clear();
-            foreach (var obj in objectsPendingValidation)
+            for (int i = 0; i < objectsPendingValidation.Count; i++)
             {
                 try
                 {
-                    if (obj)
+                    if (objectsPendingValidation[i])
                     {
-                        obj.ValidateSceneObject(isPlaying);
+                        objectsPendingValidation[i].ValidateSceneObject(isPlaying);
                     }
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(e);
                 }
+            }
+            foreach (var obj in objectsPendingValidation)
+            {
+                obj.pendingValidation = false;
             }
             objectsPendingValidation.Clear();
 
@@ -333,11 +337,15 @@ namespace AggroBird.SceneObjects
         }
         protected virtual void OnValidate()
         {
-            if (objectsPendingValidation.Count == 0)
+            if (!pendingValidation)
             {
-                UnityEditor.EditorApplication.delayCall += ValidateDelayed;
+                if (objectsPendingValidation.Count == 0)
+                {
+                    UnityEditor.EditorApplication.delayCall += ValidateDelayed;
+                }
+                objectsPendingValidation.Add(this);
+                pendingValidation = true;
             }
-            objectsPendingValidation.Add(this);
         }
 #endif
     }

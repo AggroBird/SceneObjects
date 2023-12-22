@@ -5,6 +5,8 @@ using UnityEngine.SceneManagement;
 
 namespace AggroBird.SceneObjects
 {
+    // Internal hidden object that keeps track of the current scene's GUID
+    // All scene objects will register themselves to this object on Awake
     [DefaultExecutionOrder(int.MinValue)]
     internal sealed class SceneGUID : MonoBehaviour
     {
@@ -35,6 +37,9 @@ namespace AggroBird.SceneObjects
             sceneObj = default;
             return false;
         }
+
+        // Helper function for getting the GUID of a scene at play time
+        // This only works if the scene is currently loaded in
         public static bool TryGetSceneGUID(Scene scene, out GUID guid)
         {
             if (TryGetSceneGUIDObject(scene, out SceneGUID obj))
@@ -184,26 +189,26 @@ namespace AggroBird.SceneObjects
 
         private GUID RegisterLocalSceneObject(SceneObject sceneObject)
         {
-            if (sceneObject.guid != GUID.zero)
+            if (sceneObject.internalSceneObjectGuid != GUID.zero)
             {
-                bool isPrefabInstance = sceneObject.guid != sceneGUID;
-                if (sceneObject.objectId != 0 || isPrefabInstance)
+                bool isPrefabInstance = sceneObject.internalSceneObjectGuid != sceneGUID;
+                if (sceneObject.internalSceneObjectId != 0 || isPrefabInstance)
                 {
-                    sceneObject.objectId = GetUniqueObjectID(sceneObject.objectId);
+                    sceneObject.internalSceneObjectId = GetUniqueObjectID(sceneObject.internalSceneObjectId);
 
                     // If the guid is not the scene GUID, its a prefab instance
                     if (isPrefabInstance)
                     {
                         // Add to prefab instance table
-                        if (!allLocalScenePrefabInstances.TryGetValue(sceneObject.guid, out var table))
+                        if (!allLocalScenePrefabInstances.TryGetValue(sceneObject.internalSceneObjectGuid, out var table))
                         {
-                            allLocalScenePrefabInstances[sceneObject.guid] = table = new();
+                            allLocalScenePrefabInstances[sceneObject.internalSceneObjectGuid] = table = new();
                         }
-                        table[sceneObject.objectId] = sceneObject;
+                        table[sceneObject.internalSceneObjectId] = sceneObject;
                     }
 
                     // Add to all objects table
-                    allLocalSceneObjects[sceneObject.objectId] = sceneObject;
+                    allLocalSceneObjects[sceneObject.internalSceneObjectId] = sceneObject;
                 }
 
                 return sceneGUID;

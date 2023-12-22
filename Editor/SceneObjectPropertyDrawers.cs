@@ -10,6 +10,62 @@ using UnityObject = UnityEngine.Object;
 
 namespace AggroBird.SceneObjects.Editor
 {
+    [CustomPropertyDrawer(typeof(SceneObjectGUIDAttribute))]
+    internal sealed class SceneObjectGUIDAttributeDrawer : PropertyDrawer
+    {
+        private static readonly GUIContent content = new("GUID");
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            using (new EditorGUI.DisabledGroupScope(true))
+            {
+                position = EditorGUI.PrefixLabel(position, content);
+                if (property.hasMultipleDifferentValues)
+                {
+                    EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
+                    EditorGUI.TextField(position, string.Empty);
+                }
+                else
+                {
+                    ulong upper = property.FindPropertyRelative((GUID def) => def.Upper).ulongValue;
+                    ulong lower = property.FindPropertyRelative((GUID def) => def.Lower).ulongValue;
+                    EditorGUI.TextField(position, $"{upper:x16}{lower:x16}");
+                }
+            }
+        }
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUI.GetPropertyHeight(property, label);
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(SceneObjectIDAttribute))]
+    internal sealed class SceneObjectIDAttributeDrawer : PropertyDrawer
+    {
+        private static readonly GUIContent content = new("Object ID");
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            using (new EditorGUI.DisabledGroupScope(true))
+            {
+                position = EditorGUI.PrefixLabel(position, content);
+                if (property.hasMultipleDifferentValues)
+                {
+                    EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
+                    EditorGUI.TextField(position, string.Empty);
+                }
+                else
+                {
+                    EditorGUI.TextField(position, property.ulongValue.ToString());
+                }
+            }
+        }
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUI.GetPropertyHeight(property, label);
+        }
+    }
+
     [CustomPropertyDrawer(typeof(SceneObjectReference<>))]
     internal sealed class SceneObjectReferencePropertyDrawer : PropertyDrawer
     {
@@ -59,31 +115,38 @@ namespace AggroBird.SceneObjects.Editor
 
         private static GUIStyle buttonStyle;
 
+        private static bool sceneIconLoaded = false;
         private static Texture sceneIconTexture;
         private static Texture SceneIconTexture
         {
             get
             {
-                if (!sceneIconTexture)
+                if (!sceneIconLoaded)
                 {
+                    sceneIconLoaded = true;
                     sceneIconTexture = EditorGUIUtility.IconContent("d_SceneAsset Icon").image;
                 }
                 return sceneIconTexture;
             }
         }
+        private static bool prefabIconLoaded = false;
         private static Texture prefabIconTexture;
         private static Texture PrefabIconTexture
         {
             get
             {
-                if (!prefabIconTexture)
+                if (!prefabIconLoaded)
                 {
+                    prefabIconLoaded = true;
                     prefabIconTexture = EditorGUIUtility.IconContent("d_Prefab Icon").image;
                 }
                 return prefabIconTexture;
             }
         }
 
+        // Hack to override the content of the mixed value content
+        // Used to display custom information within an object field
+        // Would be cashmoney if exposed in Unity but seems all internal
         private readonly ref struct CustomObjectFieldContentScope
         {
             private static readonly FieldInfo mixedValueContentFieldInfo = typeof(EditorGUI).GetField("s_MixedValueContent", BindingFlags.Static | BindingFlags.NonPublic);
@@ -122,7 +185,6 @@ namespace AggroBird.SceneObjects.Editor
                 EditorGUI.showMixedValue = currentMixedValueState;
             }
         }
-
 
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

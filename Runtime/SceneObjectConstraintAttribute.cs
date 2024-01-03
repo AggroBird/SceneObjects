@@ -9,6 +9,8 @@ namespace AggroBird.SceneObjects
         OnlyPrefabs,
     }
 
+    // Add this to scene object reference properties to specify what kind
+    // of references the property can accept
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public sealed class SceneObjectConstraintAttribute : Attribute
     {

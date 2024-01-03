@@ -323,10 +323,31 @@ namespace AggroBird.SceneObjects.Editor
             EditorGUI.EndProperty();
         }
 
-        static void ObjectField(Rect position, SerializedProperty property, UnityObject showValue, Type referenceType)
+        private bool PrefixButton(Rect position, SerializedProperty property, Texture content, bool clickable, UnityObject showValue, Type referenceType)
         {
+            buttonStyle ??= new GUIStyle(GUI.skin.button) { padding = new RectOffset(1, 1, 1, 1) };
+            Rect buttonRect = position;
+            buttonRect.width = 18;
+            position.x += 20;
+            position.width -= 20;
+            int indent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+            ObjectField(position, property, showValue, referenceType);
+            EditorGUI.indentLevel = indent;
+            bool guiEnabled = GUI.enabled;
+            GUI.enabled = clickable;
+            bool result = GUI.Button(buttonRect, content, buttonStyle);
+            GUI.enabled = guiEnabled;
+            return result;
+        }
+
+        private void ObjectField(Rect position, SerializedProperty property, UnityObject showValue, Type referenceType)
+        {
+            SceneObjectConstraintAttribute constraint = fieldInfo.GetCustomAttribute<SceneObjectConstraintAttribute>();
+            SceneObjectFilter filter = constraint == null ? SceneObjectFilter.AllObjects : constraint.filter;
+
             EditorGUI.BeginChangeCheck();
-            UnityObject newObj = EditorGUI.ObjectField(position, showValue, referenceType, true);
+            UnityObject newObj = EditorGUI.ObjectField(position, showValue, referenceType, filter != SceneObjectFilter.OnlyPrefabs);
             if (EditorGUI.EndChangeCheck())
             {
                 if (newObj)
@@ -340,11 +361,23 @@ namespace AggroBird.SceneObjects.Editor
 
                     if (globalObjectId.identifierType == 1)
                     {
-                        // Assigned prefab
+                        if (filter == SceneObjectFilter.OnlySceneObjects)
+                        {
+                            Debug.LogError($"Field '{fieldInfo.Name}' does not accept prefab references");
+                            return;
+                        }
+
+                        // Assign prefab
                         SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), globalObjectId.targetObjectId, 0);
                     }
                     else if (globalObjectId.identifierType == 2)
                     {
+                        if (filter == SceneObjectFilter.OnlyPrefabs)
+                        {
+                            Debug.LogError($"Field '{fieldInfo.Name}' does not accept scene object references");
+                            return;
+                        }
+
                         if (globalObjectId.targetPrefabId != 0)
                         {
                             // Assigned prefab instance
@@ -367,24 +400,6 @@ namespace AggroBird.SceneObjects.Editor
                     SetSceneObjectReferenceValues(property, GUID.zero, 0, 0);
                 }
             }
-        }
-
-        static bool PrefixButton(Rect position, SerializedProperty property, Texture content, bool clickable, UnityObject showValue, Type referenceType)
-        {
-            buttonStyle ??= new GUIStyle(GUI.skin.button) { padding = new RectOffset(1, 1, 1, 1) };
-            Rect buttonRect = position;
-            buttonRect.width = 18;
-            position.x += 20;
-            position.width -= 20;
-            int indent = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 0;
-            ObjectField(position, property, showValue, referenceType);
-            EditorGUI.indentLevel = indent;
-            bool guiEnabled = GUI.enabled;
-            GUI.enabled = clickable;
-            bool result = GUI.Button(buttonRect, content, buttonStyle);
-            GUI.enabled = guiEnabled;
-            return result;
         }
 
         static bool TryParseGlobalObjectId(GUID guid, ulong prefabId, ulong objectId, out GlobalObjectId globalObjectId)

@@ -93,6 +93,13 @@ namespace AggroBird.SceneObjects
     [Serializable]
     public struct SceneObjectReference<T> where T : SceneObject
     {
+        internal SceneObjectReference(GUID guid, ulong prefabId, ulong objectId)
+        {
+            this.guid = guid;
+            this.prefabId = prefabId;
+            this.objectId = objectId;
+        }
+
         [SerializeField] private GUID guid;
 #if UNITY_EDITOR
         [SerializeField] private ulong prefabId;

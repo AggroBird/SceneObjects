@@ -185,10 +185,9 @@ namespace AggroBird.SceneObjects.Editor
         }
     }
 
-    [CustomPropertyDrawer(typeof(SceneObjectReference<>))]
-    internal sealed class SceneObjectReferencePropertyDrawer : PropertyDrawer
+    public static class SceneObjectPropertyUtility
     {
-        private static void GetSceneObjectReferenceValues(SerializedProperty property, out GUID guid, out ulong prefabId, out ulong objectId)
+        internal static void GetSceneObjectReferenceValues(SerializedProperty property, out GUID guid, out ulong prefabId, out ulong objectId)
         {
             var guidProperty = property.FindPropertyRelative("guid");
             ulong upper = guidProperty.FindPropertyRelative((GUID def) => def.Upper).ulongValue;
@@ -197,7 +196,7 @@ namespace AggroBird.SceneObjects.Editor
             prefabId = property.FindPropertyRelative("prefabId").ulongValue;
             objectId = property.FindPropertyRelative("objectId").ulongValue;
         }
-        private static void SetSceneObjectReferenceValues(SerializedProperty property, GUID guid, ulong prefabId, ulong objectId)
+        internal static void SetSceneObjectReferenceValues(SerializedProperty property, GUID guid, ulong prefabId, ulong objectId)
         {
             var guidProperty = property.FindPropertyRelative("guid");
             guidProperty.FindPropertyRelative((GUID def) => def.Upper).ulongValue = guid.Upper;
@@ -206,6 +205,24 @@ namespace AggroBird.SceneObjects.Editor
             property.FindPropertyRelative("objectId").ulongValue = objectId;
         }
 
+        public static SceneObjectReference<SceneObject> GetSceneObjectReferenceValue(this SerializedProperty property)
+        {
+            try
+            {
+                GetSceneObjectReferenceValues(property, out GUID guid, out ulong prefabId, out ulong objectId);
+                return new SceneObjectReference<SceneObject>(guid, prefabId, objectId);
+            }
+            catch
+            {
+                Debug.LogError("type is not a scene object reference value");
+                return default;
+            }
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(SceneObjectReference<>))]
+    internal sealed class SceneObjectReferencePropertyDrawer : PropertyDrawer
+    {
         private static GUIStyle buttonStyle;
 
         private static bool sceneIconLoaded = false;
@@ -288,7 +305,7 @@ namespace AggroBird.SceneObjects.Editor
 
             if (!property.hasMultipleDifferentValues)
             {
-                GetSceneObjectReferenceValues(property, out GUID guid, out ulong prefabId, out ulong objectId);
+                SceneObjectPropertyUtility.GetSceneObjectReferenceValues(property, out GUID guid, out ulong prefabId, out ulong objectId);
 
                 Type referenceType = fieldInfo.FieldType.GetGenericArguments()[0];
 
@@ -430,7 +447,7 @@ namespace AggroBird.SceneObjects.Editor
                         }
 
                         // Assign prefab
-                        SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), globalObjectId.targetObjectId, 0);
+                        SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), globalObjectId.targetObjectId, 0);
                     }
                     else if (globalObjectId.identifierType == 2)
                     {
@@ -443,12 +460,12 @@ namespace AggroBird.SceneObjects.Editor
                         if (globalObjectId.targetPrefabId != 0)
                         {
                             // Assigned prefab instance
-                            SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), globalObjectId.targetObjectId, globalObjectId.targetPrefabId);
+                            SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), globalObjectId.targetObjectId, globalObjectId.targetPrefabId);
                         }
                         else
                         {
                             // Assigned regular object
-                            SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), 0, globalObjectId.targetObjectId);
+                            SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), 0, globalObjectId.targetObjectId);
                         }
                     }
                     else
@@ -459,7 +476,7 @@ namespace AggroBird.SceneObjects.Editor
                 else
                 {
                     // Assigned null
-                    SetSceneObjectReferenceValues(property, GUID.zero, 0, 0);
+                    SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, GUID.zero, 0, 0);
                 }
             }
         }

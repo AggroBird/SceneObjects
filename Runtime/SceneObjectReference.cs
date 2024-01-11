@@ -100,6 +100,11 @@ namespace AggroBird.SceneObjects
             this.prefabId = prefabId;
             this.objectId = objectId;
         }
+
+        internal readonly (GUID guid, ulong prefabId, ulong objectId) GetValues()
+        {
+            return (guid, prefabId, objectId);
+        }
 #endif
 
 
@@ -109,10 +114,6 @@ namespace AggroBird.SceneObjects
 #endif
         [SerializeField] private ulong objectId;
 
-        internal readonly (GUID guid, ulong prefabId, ulong objectId) GetValues()
-        {
-            return (guid, prefabId, objectId);
-        }
 
         public static implicit operator SceneObjectReference(SceneObjectReference<T> reference) => new(reference.guid, reference.objectId);
         public static implicit operator bool(SceneObjectReference<T> reference) => reference.guid != GUID.zero;

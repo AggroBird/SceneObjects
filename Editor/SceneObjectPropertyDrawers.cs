@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using GUID = AggroBird.UnityExtend.GUID;
@@ -147,6 +148,22 @@ namespace AggroBird.SceneObjects.Editor
             return sceneObject;
         }
 
+        public static bool IsSceneOpen(string scenePath, out bool isLoaded)
+        {
+            int sceneCount = SceneManager.sceneCount;
+            for (int i = 0; i < sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (scenePath == scene.path)
+                {
+                    isLoaded = scene.isLoaded;
+                    return true;
+                }
+            }
+            isLoaded = false;
+            return false;
+        }
+
         private static (bool found, SceneObject obj) TryResolveSceneObjectReferenceInternal(GUID guid, ulong prefabId, ulong objectId, Type referenceType)
         {
             if (guid != GUID.zero)
@@ -165,7 +182,7 @@ namespace AggroBird.SceneObjects.Editor
                     string scenePath = AssetDatabase.GUIDToAssetPath(guid.ToString());
                     if (!string.IsNullOrEmpty(scenePath))
                     {
-                        if (scenePath == SceneManager.GetActiveScene().path)
+                        if (IsSceneOpen(scenePath, out bool isLoaded) && isLoaded)
                         {
                             if (TryFindSceneObjectFromCache(guid, prefabId, objectId, out SceneObject sceneObject))
                             {
@@ -339,7 +356,8 @@ namespace AggroBird.SceneObjects.Editor
                         string scenePath = AssetDatabase.GUIDToAssetPath(guid.ToString());
                         if (!string.IsNullOrEmpty(scenePath))
                         {
-                            if (scenePath == SceneManager.GetActiveScene().path)
+                            bool isSceneOpen = SceneObjectEditorUtilityInternal.IsSceneOpen(scenePath, out bool isLoaded);
+                            if (isSceneOpen && isLoaded)
                             {
                                 if (SceneObjectEditorUtilityInternal.TryFindSceneObjectFromCache(guid, prefabId, objectId, out SceneObject sceneObject))
                                 {
@@ -370,7 +388,7 @@ namespace AggroBird.SceneObjects.Editor
                                 {
                                     if (PrefixButton(position, property, SceneIconTexture, true, null, referenceType))
                                     {
-                                        UnityEditor.SceneManagement.EditorSceneManager.OpenScene(scenePath);
+                                        EditorSceneManager.OpenScene(scenePath, isSceneOpen ? OpenSceneMode.Additive : OpenSceneMode.Single);
                                     }
                                 }
                             }

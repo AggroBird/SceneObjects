@@ -40,31 +40,40 @@ namespace AggroBird.SceneObjects.Editor
         }
     }
 
-    [CustomPropertyDrawer(typeof(SceneObjectIDAttribute))]
+    [CustomPropertyDrawer(typeof(SceneObjectID))]
     internal sealed class SceneObjectIDAttributeDrawer : PropertyDrawer
     {
-        private static readonly GUIContent content = new("Object ID");
+        private static readonly GUIContent objectIdLabel = new("Object ID");
+        private static readonly GUIContent prefabIdLabel = new("Prefab ID");
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             using (new EditorGUI.DisabledGroupScope(true))
             {
-                position = EditorGUI.PrefixLabel(position, content);
-                if (property.hasMultipleDifferentValues)
+                static void ShowProperty(Rect position, SerializedProperty property, GUIContent label)
                 {
+                    position = EditorGUI.PrefixLabel(position, label);
                     EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
-                    EditorGUI.TextField(position, string.Empty);
-                }
-                else
-                {
                     EditorGUI.TextField(position, property.ulongValue.ToString());
                 }
+
+                position.height = EditorExtendUtility.SingleLineHeight;
+                ShowProperty(position, property.FindPropertyRelative("objectId"), objectIdLabel);
+                position.y += EditorExtendUtility.SinglePropertyHeight;
+                ShowProperty(position, property.FindPropertyRelative("prefabId"), prefabIdLabel);
             }
         }
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUI.GetPropertyHeight(property, label);
+            return EditorExtendUtility.SingleLineHeight * 2 + EditorExtendUtility.StandardVerticalSpacing;
         }
+    }
+
+    internal enum ReferenceType
+    {
+        PrefabReference,
+        SceneObjectReference,
+        InvalidReference,
     }
 
     [InitializeOnLoad]
@@ -77,52 +86,26 @@ namespace AggroBird.SceneObjects.Editor
 
         internal static class SceneObjectReferenceCache
         {
-            private static readonly Dictionary<EditorSceneObjectReference, SceneObject> cache = new();
+            private static readonly Dictionary<SceneObjectReference, SceneObject> cache = new();
 
-            public static bool TryGetSceneObject(EditorSceneObjectReference key, out SceneObject obj)
+            public static bool TryGetSceneObject(SceneObjectReference key, out SceneObject obj)
             {
                 return cache.TryGetValue(key, out obj) && obj;
             }
-            public static void StoreSceneObject(EditorSceneObjectReference key, SceneObject obj)
+            public static void StoreSceneObject(SceneObjectReference key, SceneObject obj)
             {
                 cache[key] = obj;
             }
         }
 
-        private static bool TryLoadPrefabAsset(GUID guid, Type type, out SceneObject prefab)
+        private static bool TryParseGlobalObjectId(GUID guid, ulong objectId, ulong prefabId, out GlobalObjectId globalObjectId)
         {
-            string path = AssetDatabase.GUIDToAssetPath(guid.ToString());
-            if (!string.IsNullOrEmpty(path))
-            {
-                prefab = AssetDatabase.LoadAssetAtPath(path, type) as SceneObject;
-                return prefab;
-            }
-            prefab = null;
-            return false;
+            return GlobalObjectId.TryParse($"GlobalObjectId_V1-2-{guid}-{objectId}-{prefabId}", out globalObjectId);
         }
 
-        private static bool TryParseGlobalObjectId(GUID guid, ulong prefabId, ulong objectId, out GlobalObjectId globalObjectId)
+        public static bool TryFindSceneObjectFromCache(GUID guid, ulong objectId, ulong prefabId, out SceneObject sceneObject)
         {
-            return prefabId != 0 ?
-                GlobalObjectId.TryParse($"GlobalObjectId_V1-2-{guid}-{prefabId}-{objectId}", out globalObjectId) :
-                GlobalObjectId.TryParse($"GlobalObjectId_V1-2-{guid}-{objectId}-0", out globalObjectId);
-        }
-
-        public static bool TryFindPrefabAssetFromCache(GUID guid, ulong prefabId, ulong objectId, Type referenceType, out SceneObject prefabObject)
-        {
-            EditorSceneObjectReference key = new(guid, prefabId, objectId);
-            if (!SceneObjectReferenceCache.TryGetSceneObject(key, out prefabObject))
-            {
-                if (TryLoadPrefabAsset(guid, referenceType, out prefabObject))
-                {
-                    SceneObjectReferenceCache.StoreSceneObject(key, prefabObject);
-                }
-            }
-            return prefabObject;
-        }
-        public static bool TryFindSceneObjectFromCache(GUID guid, ulong prefabId, ulong objectId, out SceneObject sceneObject)
-        {
-            EditorSceneObjectReference key = new(guid, prefabId, objectId);
+            SceneObjectReference key = new(guid, objectId, prefabId);
             if (!SceneObjectReferenceCache.TryGetSceneObject(key, out sceneObject))
             {
                 if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -133,7 +116,7 @@ namespace AggroBird.SceneObjects.Editor
                         SceneObjectReferenceCache.StoreSceneObject(key, sceneObject);
                     }
                 }
-                else if (TryParseGlobalObjectId(guid, prefabId, objectId, out GlobalObjectId globalObjectId))
+                else if (TryParseGlobalObjectId(guid, objectId, prefabId, out GlobalObjectId globalObjectId))
                 {
                     // TODO: This can cause the editor to slow down when referencing a broken object
                     // If we can find a faster way to find a scene object through an object id, that would be great
@@ -164,27 +147,40 @@ namespace AggroBird.SceneObjects.Editor
             return false;
         }
 
-        private static (bool found, SceneObject obj) TryResolveSceneObjectReferenceInternal(GUID guid, ulong prefabId, ulong objectId, Type referenceType)
+        public static ReferenceType GetReferenceType(string assetPath)
+        {
+            if (!string.IsNullOrEmpty(assetPath))
+            {
+                if (assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ReferenceType.PrefabReference;
+                }
+                if (assetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ReferenceType.SceneObjectReference;
+                }
+            }
+            return ReferenceType.InvalidReference;
+        }
+
+        private static (bool found, SceneObject obj) TryResolveSceneObjectReferenceInternal(GUID guid, ulong objectId, ulong prefabId, Type referenceType)
         {
             if (guid != GUID.zero)
             {
-                if (prefabId != 0 && objectId == 0)
+                string assetPath = AssetDatabase.GUIDToAssetPath(guid.ToString());
+                switch (GetReferenceType(assetPath))
                 {
-                    // Any of prefab
-                    if (TryFindPrefabAssetFromCache(guid, prefabId, objectId, referenceType, out SceneObject prefabObject))
-                    {
-                        return (true, prefabObject);
-                    }
-                }
-                else if (objectId != 0)
-                {
-                    // Scene object
-                    string scenePath = AssetDatabase.GUIDToAssetPath(guid.ToString());
-                    if (!string.IsNullOrEmpty(scenePath))
-                    {
-                        if (IsSceneOpen(scenePath, out bool isLoaded) && isLoaded)
+                    case ReferenceType.PrefabReference:
+                        var prefabObject = AssetDatabase.LoadAssetAtPath<SceneObject>(assetPath);
+                        if (referenceType.IsAssignableFrom(prefabObject.GetType()))
                         {
-                            if (TryFindSceneObjectFromCache(guid, prefabId, objectId, out SceneObject sceneObject))
+                            return (true, prefabObject);
+                        }
+                        break;
+                    case ReferenceType.SceneObjectReference:
+                        if (IsSceneOpen(assetPath, out bool isLoaded) && isLoaded)
+                        {
+                            if (TryFindSceneObjectFromCache(guid, objectId, prefabId, out SceneObject sceneObject))
                             {
                                 return (true, sceneObject);
                             }
@@ -194,7 +190,7 @@ namespace AggroBird.SceneObjects.Editor
                             // Different scene
                             return (true, null);
                         }
-                    }
+                        break;
                 }
             }
 
@@ -204,30 +200,30 @@ namespace AggroBird.SceneObjects.Editor
 
     public static class SceneObjectPropertyUtility
     {
-        internal static void GetSceneObjectReferenceValues(SerializedProperty property, out GUID guid, out ulong prefabId, out ulong objectId)
+        internal static void GetSceneObjectReferenceValues(SerializedProperty property, out GUID guid, out ulong objectId, out ulong prefabId)
         {
             var guidProperty = property.FindPropertyRelative("guid");
             ulong upper = guidProperty.FindPropertyRelative((GUID def) => def.Upper).ulongValue;
             ulong lower = guidProperty.FindPropertyRelative((GUID def) => def.Lower).ulongValue;
             guid = new(upper, lower);
-            prefabId = property.FindPropertyRelative("prefabId").ulongValue;
             objectId = property.FindPropertyRelative("objectId").ulongValue;
+            prefabId = property.FindPropertyRelative("prefabId").ulongValue;
         }
-        internal static void SetSceneObjectReferenceValues(SerializedProperty property, GUID guid, ulong prefabId, ulong objectId)
+        internal static void SetSceneObjectReferenceValues(SerializedProperty property, GUID guid, ulong objectId, ulong prefabId)
         {
             var guidProperty = property.FindPropertyRelative("guid");
             guidProperty.FindPropertyRelative((GUID def) => def.Upper).ulongValue = guid.Upper;
             guidProperty.FindPropertyRelative((GUID def) => def.Lower).ulongValue = guid.Lower;
-            property.FindPropertyRelative("prefabId").ulongValue = prefabId;
             property.FindPropertyRelative("objectId").ulongValue = objectId;
+            property.FindPropertyRelative("prefabId").ulongValue = prefabId;
         }
 
         public static SceneObjectReference<SceneObject> GetSceneObjectReferenceValue(this SerializedProperty property)
         {
             try
             {
-                GetSceneObjectReferenceValues(property, out GUID guid, out ulong prefabId, out ulong objectId);
-                return new SceneObjectReference<SceneObject>(guid, prefabId, objectId);
+                GetSceneObjectReferenceValues(property, out GUID guid, out ulong objectId, out ulong prefabId);
+                return new SceneObjectReference<SceneObject>(guid, objectId, prefabId);
             }
             catch
             {
@@ -313,7 +309,6 @@ namespace AggroBird.SceneObjects.Editor
             }
         }
 
-
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
@@ -322,90 +317,92 @@ namespace AggroBird.SceneObjects.Editor
 
             if (!property.hasMultipleDifferentValues)
             {
-                SceneObjectPropertyUtility.GetSceneObjectReferenceValues(property, out GUID guid, out ulong prefabId, out ulong objectId);
+                SceneObjectPropertyUtility.GetSceneObjectReferenceValues(property, out GUID guid, out ulong objectId, out ulong prefabId);
 
                 Type referenceType = (fieldInfo.FieldType.IsArray ? fieldInfo.FieldType.GetElementType() : fieldInfo.FieldType).GetGenericArguments()[0];
 
                 void DrawPropertyField()
                 {
-                    if (guid == GUID.zero && prefabId == 0 && objectId == 0)
+                    if (guid == GUID.zero)
                     {
                         // No object
                         PrefixButton(position, property, null, false, null, referenceType);
                         return;
                     }
-                    else if (guid != GUID.zero && prefabId != 0 && objectId == 0)
+                    else
                     {
-                        // Any of prefab
-                        if (SceneObjectEditorUtilityInternal.TryFindPrefabAssetFromCache(guid, prefabId, objectId, referenceType, out SceneObject prefabObject))
+                        string assetPath = AssetDatabase.GUIDToAssetPath(guid.ToString());
+                        switch (SceneObjectEditorUtilityInternal.GetReferenceType(assetPath))
                         {
-                            if (PrefixButton(position, property, PrefabIconTexture, true, prefabObject, referenceType))
+                            case ReferenceType.PrefabReference:
                             {
-                                AssetDatabase.OpenAsset(prefabObject);
-                            }
-                        }
-                        else
-                        {
-                            PrefixButton(position, property, PrefabIconTexture, false, EditorExtendUtility.MissingObject, referenceType);
-                        }
-                        return;
-                    }
-                    else if (guid != GUID.zero && objectId != 0)
-                    {
-                        // Scene object
-                        string scenePath = AssetDatabase.GUIDToAssetPath(guid.ToString());
-                        if (!string.IsNullOrEmpty(scenePath))
-                        {
-                            bool isSceneOpen = SceneObjectEditorUtilityInternal.IsSceneOpen(scenePath, out bool isLoaded);
-                            if (isSceneOpen && isLoaded)
-                            {
-                                if (SceneObjectEditorUtilityInternal.TryFindSceneObjectFromCache(guid, prefabId, objectId, out SceneObject sceneObject))
+                                // TODO: Nested prefab children
+                                var prefabObject = AssetDatabase.LoadAssetAtPath<SceneObject>(assetPath);
+                                if (referenceType.IsAssignableFrom(prefabObject.GetType()))
                                 {
-                                    var sceneObjectType = sceneObject.GetType();
-                                    if (sceneObjectType.Equals(referenceType) || sceneObjectType.IsSubclassOf(referenceType))
+                                    // Prefab
+                                    if (PrefixButton(position, property, PrefabIconTexture, true, prefabObject, referenceType))
                                     {
-                                        PrefixButton(position, property, SceneIconTexture, false, sceneObject, referenceType);
-                                    }
-                                    else
-                                    {
-                                        // Type mismatch
-                                        using (new CustomObjectFieldContentScope("Type mismatch", null))
-                                        {
-                                            PrefixButton(position, property, SceneIconTexture, false, null, referenceType);
-                                        }
+                                        AssetDatabase.OpenAsset(prefabObject);
                                     }
                                 }
                                 else
                                 {
-                                    // Missing object
-                                    PrefixButton(position, property, SceneIconTexture, false, EditorExtendUtility.MissingObject, referenceType);
-                                }
-                            }
-                            else
-                            {
-                                // Different scene
-                                using (new CustomObjectFieldContentScope("Scene reference", null))
-                                {
-                                    if (PrefixButton(position, property, SceneIconTexture, true, null, referenceType))
+                                    // Type mismatch
+                                    using (new CustomObjectFieldContentScope("Type mismatch", null))
                                     {
-                                        EditorSceneManager.OpenScene(scenePath, isSceneOpen ? OpenSceneMode.Additive : OpenSceneMode.Single);
+                                        PrefixButton(position, property, PrefabIconTexture, false, null, referenceType);
                                     }
                                 }
                             }
-                        }
-                        else
-                        {
-                            // Missing scene
-                            using (new CustomObjectFieldContentScope("Missing Scene", null))
+                            break;
+
+                            case ReferenceType.SceneObjectReference:
                             {
-                                PrefixButton(position, property, SceneIconTexture, false, null, referenceType);
+                                bool isSceneOpen = SceneObjectEditorUtilityInternal.IsSceneOpen(assetPath, out bool isLoaded);
+                                if (isSceneOpen && isLoaded)
+                                {
+                                    if (SceneObjectEditorUtilityInternal.TryFindSceneObjectFromCache(guid, objectId, prefabId, out SceneObject sceneObject))
+                                    {
+                                        if (referenceType.IsAssignableFrom(sceneObject.GetType()))
+                                        {
+                                            // Scene object
+                                            PrefixButton(position, property, SceneIconTexture, false, sceneObject, referenceType);
+                                        }
+                                        else
+                                        {
+                                            // Type mismatch
+                                            using (new CustomObjectFieldContentScope("Type mismatch", null))
+                                            {
+                                                PrefixButton(position, property, SceneIconTexture, false, null, referenceType);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // Missing object
+                                        PrefixButton(position, property, SceneIconTexture, false, EditorExtendUtility.MissingObject, referenceType);
+                                    }
+                                }
+                                else
+                                {
+                                    // Different scene
+                                    using (new CustomObjectFieldContentScope("Scene reference", null))
+                                    {
+                                        if (PrefixButton(position, property, SceneIconTexture, true, null, referenceType))
+                                        {
+                                            EditorSceneManager.OpenScene(assetPath, isSceneOpen ? OpenSceneMode.Additive : OpenSceneMode.Single);
+                                        }
+                                    }
+                                }
                             }
+                            break;
+
+                            default:
+                                // Invalid object reference
+                                PrefixButton(position, property, null, false, EditorExtendUtility.MissingObject, referenceType);
+                                break;
                         }
-                    }
-                    else
-                    {
-                        // Invalid object reference
-                        PrefixButton(position, property, null, false, EditorExtendUtility.MissingObject, referenceType);
                     }
                 }
 
@@ -450,8 +447,13 @@ namespace AggroBird.SceneObjects.Editor
                 if (newObj)
                 {
                     GlobalObjectId globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(newObj);
-                    if (globalObjectId.assetGUID == default)
+                    GUID guid = new(globalObjectId.assetGUID.ToString());
+                    ulong objectId = globalObjectId.targetObjectId;
+                    ulong prefabId = globalObjectId.targetPrefabId;
+
+                    if (guid == default)
                     {
+                        // TODO: Nested prefab children
                         Debug.LogError($"Object '{newObj}' has no GUID, possibly because it is within a scene that has not been saved yet.");
                         return;
                     }
@@ -465,7 +467,7 @@ namespace AggroBird.SceneObjects.Editor
                         }
 
                         // Assign prefab
-                        SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), globalObjectId.targetObjectId, 0);
+                        SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
                     }
                     else if (globalObjectId.identifierType == 2)
                     {
@@ -475,16 +477,8 @@ namespace AggroBird.SceneObjects.Editor
                             return;
                         }
 
-                        if (globalObjectId.targetPrefabId != 0)
-                        {
-                            // Assigned prefab instance
-                            SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), globalObjectId.targetObjectId, globalObjectId.targetPrefabId);
-                        }
-                        else
-                        {
-                            // Assigned regular object
-                            SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, new GUID(globalObjectId.assetGUID.ToString()), 0, globalObjectId.targetObjectId);
-                        }
+                        // Assign scene object or prefab instance
+                        SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
                     }
                     else
                     {

@@ -52,43 +52,22 @@ namespace AggroBird.SceneObjects
         }
 
         // All pre-placed scene objects (regular scene objects and scene prefab instances)
-        private readonly Dictionary<ulong, SceneObject> allLocalSceneObjects = new();
+        private readonly Dictionary<SceneObjectID, SceneObject> allLocalSceneObjects = new();
         // All pre-placed scene prefab instances, grouped by GUID
-        private readonly Dictionary<GUID, Dictionary<ulong, SceneObject>> allLocalScenePrefabInstances = new();
-
-        // Utility function to get a new ID in case of a collision (Object.Instantiated scene object)
-        // Granted instantiation happens after SceneObject.Awake(), all scene objects should have already
-        // had their ID's registered
-        private ulong lastReassignedObjectId = 0;
-        private ulong GetUniqueObjectID(ulong currentId)
-        {
-            // Prefab instantiation
-            if (currentId == 0)
-            {
-                currentId = ++lastReassignedObjectId;
-            }
-
-            // Ensure ID not 0 or in use
-            while (currentId == 0 || allLocalSceneObjects.ContainsKey(currentId))
-            {
-                currentId++;
-            }
-
-            return currentId;
-        }
+        private readonly Dictionary<GUID, Dictionary<SceneObjectID, SceneObject>> allLocalScenePrefabInstances = new();
 
         internal bool TryFindSceneObject<T>(SceneObjectReference reference, out T result) where T : SceneObject
         {
             if (reference.guid != GUID.zero)
             {
-                // Check if object within this scene
-                if (reference.guid == sceneGUID)
+                var sceneObjectId = reference.GetSceneObjectID();
+                if (sceneObjectId != SceneObjectID.zero)
                 {
-                    // Object ID cannot be 0 here
-                    if (reference.objectId != 0)
+                    // Check if object within this scene
+                    if (reference.guid == sceneGUID)
                     {
                         // Local pre-placed regular scene object
-                        if (allLocalSceneObjects.TryGetValue(reference.objectId, out SceneObject sceneObject))
+                        if (allLocalSceneObjects.TryGetValue(sceneObjectId, out SceneObject sceneObject))
                         {
                             if (sceneObject && sceneObject is T casted)
                             {
@@ -97,33 +76,33 @@ namespace AggroBird.SceneObjects
                             }
                         }
                     }
-                }
-                else
-                {
-                    // Search the prefab instances
-                    if (allLocalScenePrefabInstances.TryGetValue(reference.guid, out var table))
+                    else
                     {
-                        if (reference.objectId != 0)
+                        // Search the prefab instances
+                        if (allLocalScenePrefabInstances.TryGetValue(reference.guid, out var table))
                         {
-                            // Specific prefab instance
-                            if (table.TryGetValue(reference.objectId, out SceneObject sceneObject))
+                            if (sceneObjectId.prefabId != 0)
                             {
-                                if (sceneObject && sceneObject is T casted)
+                                // Specific prefab instance
+                                if (table.TryGetValue(sceneObjectId, out SceneObject sceneObject))
                                 {
-                                    result = casted;
-                                    return true;
+                                    if (sceneObject && sceneObject is T casted)
+                                    {
+                                        result = casted;
+                                        return true;
+                                    }
                                 }
                             }
-                        }
-                        else
-                        {
-                            // Any of prefab type
-                            foreach (var sceneObject in table.Values)
+                            else
                             {
-                                if (sceneObject && sceneObject is T casted)
+                                // Any of prefab type
+                                foreach (var sceneObject in table.Values)
                                 {
-                                    result = casted;
-                                    return true;
+                                    if (sceneObject && sceneObject is T casted)
+                                    {
+                                        result = casted;
+                                        return true;
+                                    }
                                 }
                             }
                         }
@@ -138,14 +117,14 @@ namespace AggroBird.SceneObjects
         {
             if (reference.guid != GUID.zero)
             {
-                // Check if object within this scene
-                if (reference.guid == sceneGUID)
+                var sceneObjectId = reference.GetSceneObjectID();
+                if (sceneObjectId != SceneObjectID.zero)
                 {
-                    // Object ID cannot be 0 here
-                    if (reference.objectId != 0)
+                    // Check if object within this scene
+                    if (reference.guid == sceneGUID)
                     {
                         // Local pre-placed regular scene object
-                        if (allLocalSceneObjects.TryGetValue(reference.objectId, out SceneObject sceneObject))
+                        if (allLocalSceneObjects.TryGetValue(sceneObjectId, out SceneObject sceneObject))
                         {
                             if (sceneObject && sceneObject is T casted)
                             {
@@ -153,31 +132,31 @@ namespace AggroBird.SceneObjects
                             }
                         }
                     }
-                }
-                else
-                {
-                    // Search the prefab instances
-                    if (allLocalScenePrefabInstances.TryGetValue(reference.guid, out var table))
+                    else
                     {
-                        if (reference.objectId != 0)
+                        // Search the prefab instances
+                        if (allLocalScenePrefabInstances.TryGetValue(reference.guid, out var table))
                         {
-                            // Specific prefab instance
-                            if (table.TryGetValue(reference.objectId, out SceneObject sceneObject))
+                            if (sceneObjectId.prefabId != 0)
                             {
-                                if (sceneObject && sceneObject is T casted)
+                                // Specific prefab instance
+                                if (table.TryGetValue(sceneObjectId, out SceneObject sceneObject))
                                 {
-                                    result.Add(casted);
+                                    if (sceneObject && sceneObject is T casted)
+                                    {
+                                        result.Add(casted);
+                                    }
                                 }
                             }
-                        }
-                        else
-                        {
-                            // Any of prefab type
-                            foreach (var sceneObject in table.Values)
+                            else
                             {
-                                if (sceneObject && sceneObject is T casted)
+                                // Any of prefab type
+                                foreach (var sceneObject in table.Values)
                                 {
-                                    result.Add(casted);
+                                    if (sceneObject && sceneObject is T casted)
+                                    {
+                                        result.Add(casted);
+                                    }
                                 }
                             }
                         }
@@ -192,24 +171,25 @@ namespace AggroBird.SceneObjects
             if (sceneObject.internalSceneObjectGuid != GUID.zero)
             {
                 bool isPrefabInstance = sceneObject.internalSceneObjectGuid != sceneGUID;
-                if (sceneObject.internalSceneObjectId != 0 || isPrefabInstance)
+                if (isPrefabInstance)
                 {
-                    sceneObject.internalSceneObjectId = GetUniqueObjectID(sceneObject.internalSceneObjectId);
-
-                    // If the guid is not the scene GUID, its a prefab instance
-                    if (isPrefabInstance)
+                    if (sceneObject.internalSceneObjectId.prefabId == 0)
                     {
-                        // Add to prefab instance table
-                        if (!allLocalScenePrefabInstances.TryGetValue(sceneObject.internalSceneObjectGuid, out var table))
-                        {
-                            allLocalScenePrefabInstances[sceneObject.internalSceneObjectGuid] = table = new();
-                        }
-                        table[sceneObject.internalSceneObjectId] = sceneObject;
+                        // TODO: instantiated prefabs
+                        Debug.LogWarning("NYI: Instantiated object registration");
+                        return GUID.zero;
                     }
 
-                    // Add to all objects table
-                    allLocalSceneObjects[sceneObject.internalSceneObjectId] = sceneObject;
+                    // Add to prefab instance table
+                    if (!allLocalScenePrefabInstances.TryGetValue(sceneObject.internalSceneObjectGuid, out var table))
+                    {
+                        allLocalScenePrefabInstances[sceneObject.internalSceneObjectGuid] = table = new();
+                    }
+                    table[sceneObject.internalSceneObjectId] = sceneObject;
                 }
+
+                // Add to all objects table
+                allLocalSceneObjects[sceneObject.internalSceneObjectId] = sceneObject;
 
                 return sceneGUID;
             }

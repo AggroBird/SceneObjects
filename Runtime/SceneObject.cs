@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using AggroBird.SceneObjects.Editor;
+#endif
 
 [assembly: InternalsVisibleTo("AggroBird.SceneObjects.Editor")]
 
@@ -14,10 +17,43 @@ namespace AggroBird.SceneObjects
     {
 
     }
-    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
-    internal sealed class SceneObjectIDAttribute : PropertyAttribute
-    {
 
+    [Serializable]
+    internal struct SceneObjectID
+    {
+        public static readonly SceneObjectID zero = new();
+
+        public SceneObjectID(ulong objectId, ulong prefabId)
+        {
+            this.objectId = objectId;
+            this.prefabId = prefabId;
+        }
+
+        public ulong objectId;
+        public ulong prefabId;
+
+        public readonly bool Equals(SceneObjectID other)
+        {
+            return objectId == other.objectId && prefabId == other.prefabId;
+        }
+
+        public override readonly bool Equals(object obj)
+        {
+            return obj is SceneObjectID other && Equals(other);
+        }
+        public override int GetHashCode()
+        {
+            return objectId.GetHashCode() ^ (prefabId.GetHashCode() << 2);
+        }
+
+        public static bool operator ==(SceneObjectID lhs, SceneObjectID rhs)
+        {
+            return lhs.objectId == rhs.objectId && lhs.prefabId == rhs.prefabId;
+        }
+        public static bool operator !=(SceneObjectID lhs, SceneObjectID rhs)
+        {
+            return lhs.objectId != rhs.objectId || lhs.prefabId != rhs.prefabId;
+        }
     }
 
     public abstract class SceneObject : MonoBehaviour
@@ -25,8 +61,9 @@ namespace AggroBird.SceneObjects
         // In the case of a regular scene object, this contains the scene GUID
         // In the case of a scene prefab instance, this contains the prefab GUID
         [SerializeField, SceneObjectGUID] internal GUID internalSceneObjectGuid;
-        // In case of an actual prefab, this will be 0
-        [SerializeField, SceneObjectID] internal ulong internalSceneObjectId;
+        // For regular scene objects, objectId will be the scene object ID and prefabId will be 0
+        // For prefab instances, objectId will be the scene object ID within the prefab and prefabId will be prefab instance ID
+        [SerializeField] internal SceneObjectID internalSceneObjectId;
 
         // The GUID of the scene this object is in at play time (zero if registration failed)
         private GUID sceneGUID;
@@ -37,7 +74,7 @@ namespace AggroBird.SceneObjects
         {
             if (reference.guid != GUID.zero && sceneGUID != GUID.zero)
             {
-                if (reference.objectId == 0)
+                if (reference.prefabId == 0)
                 {
                     // Prefab type comparison
                     return reference.guid == internalSceneObjectGuid;
@@ -48,7 +85,7 @@ namespace AggroBird.SceneObjects
                     // (Don't use the object's GUID, it might be a prefab)
                     if (reference.guid == sceneGUID)
                     {
-                        return reference.objectId == internalSceneObjectId;
+                        return reference.GetSceneObjectID() == internalSceneObjectId;
                     }
                 }
             }
@@ -60,12 +97,12 @@ namespace AggroBird.SceneObjects
         // Returns an invalid reference if the scene is not playing or if the object is an uninstantiated prefab
         public SceneObjectReference GetReference()
         {
-            if (sceneGUID == GUID.zero || internalSceneObjectId == 0)
+            if (sceneGUID == GUID.zero || internalSceneObjectId.prefabId == 0)
             {
                 return default;
             }
 
-            return new(sceneGUID, internalSceneObjectId);
+            return new(sceneGUID, internalSceneObjectId.objectId, internalSceneObjectId.prefabId);
         }
 
 
@@ -207,18 +244,19 @@ namespace AggroBird.SceneObjects
                 {
                     // Reset GUID and clear object ID on original prefabs
                     GUID assetGUID = new(globalObjectId.assetGUID.ToString());
-                    if (assetGUID != internalSceneObjectGuid || internalSceneObjectId != 0)
+                    SceneObjectID sceneObjectID = globalObjectId.GetSceneObjectID();
+                    if (assetGUID != internalSceneObjectGuid || internalSceneObjectId != sceneObjectID)
                     {
                         internalSceneObjectGuid = assetGUID;
-                        internalSceneObjectId = 0;
+                        internalSceneObjectId = sceneObjectID;
                         UnityEditor.EditorUtility.SetDirty(this);
                     }
                 }
-                else if (internalSceneObjectGuid != GUID.zero || internalSceneObjectId != 0)
+                else if (internalSceneObjectGuid != GUID.zero || internalSceneObjectId != SceneObjectID.zero)
                 {
                     // Clear everything on invalid objects
                     internalSceneObjectGuid = GUID.zero;
-                    internalSceneObjectId = 0;
+                    internalSceneObjectId = SceneObjectID.zero;
                     UnityEditor.EditorUtility.SetDirty(this);
                 }
             }
@@ -227,23 +265,24 @@ namespace AggroBird.SceneObjects
                 var globalObjectId = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this);
                 if (globalObjectId.identifierType == 2)
                 {
+                    SceneObjectID sceneObjectID = globalObjectId.GetSceneObjectID();
                     if (globalObjectId.targetPrefabId == 0)
                     {
                         // Reset GUID and object ID on regular objects
                         GUID sceneGUID = new(globalObjectId.assetGUID.ToString());
-                        if (internalSceneObjectGuid != sceneGUID || internalSceneObjectId != globalObjectId.targetObjectId)
+                        if (internalSceneObjectGuid != sceneGUID || internalSceneObjectId != sceneObjectID)
                         {
                             internalSceneObjectGuid = sceneGUID;
-                            internalSceneObjectId = globalObjectId.targetObjectId;
+                            internalSceneObjectId = sceneObjectID;
                             UnityEditor.EditorUtility.SetDirty(this);
                         }
                     }
                     else
                     {
                         // Reset object ID on prefab instances
-                        if (internalSceneObjectId != globalObjectId.targetPrefabId)
+                        if (internalSceneObjectId != sceneObjectID)
                         {
-                            internalSceneObjectId = globalObjectId.targetPrefabId;
+                            internalSceneObjectId = sceneObjectID;
                             UnityEditor.EditorUtility.SetDirty(this);
                         }
 
@@ -257,11 +296,11 @@ namespace AggroBird.SceneObjects
                         }
                     }
                 }
-                else if (internalSceneObjectGuid != GUID.zero || internalSceneObjectId != 0)
+                else if (internalSceneObjectGuid != GUID.zero || internalSceneObjectId != SceneObjectID.zero)
                 {
                     // Clear everything on invalid objects
                     internalSceneObjectGuid = GUID.zero;
-                    internalSceneObjectId = 0;
+                    internalSceneObjectId = SceneObjectID.zero;
                     UnityEditor.EditorUtility.SetDirty(this);
                 }
 

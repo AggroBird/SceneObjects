@@ -324,7 +324,7 @@ namespace AggroBird.SceneObjects.Editor
             {
                 SceneObjectPropertyUtility.GetSceneObjectReferenceValues(property, out GUID guid, out ulong prefabId, out ulong objectId);
 
-                Type referenceType = fieldInfo.FieldType.GetGenericArguments()[0];
+                Type referenceType = (fieldInfo.FieldType.IsArray ? fieldInfo.FieldType.GetElementType() : fieldInfo.FieldType).GetGenericArguments()[0];
 
                 void DrawPropertyField()
                 {

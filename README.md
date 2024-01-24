@@ -32,3 +32,5 @@ The scene object reference value to an object in the scene can be retrieved with
 ## Notice
 
 Care must be taken to preserve links to scene objects. Deleting an object in a scene will break any references in a similar fashion to regular serialized objects. Objects instantiated in the scene (either from a source object or a prefab) will get a new Object ID assigned. There is no guarantee these ID's will be the same, as they are dependend on the order of instantiation. Instantiating any scene objects before all pre-placed scene object registration is completed may cause collisions in the lookup.
+
+Additionally, since the GUID and ID's are stored as serialized fields, they can be applied as prefab overrides. This may cause issues with other instances until Unity adds [something](https://forum.unity.com/threads/is-it-possible-to-make-a-field-a-default-override.647443/) to ignore fields from prefab apply.

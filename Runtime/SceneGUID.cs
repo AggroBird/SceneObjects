@@ -98,7 +98,7 @@ namespace AggroBird.SceneObjects
                                 // Any of prefab type
                                 foreach (var sceneObject in table.Values)
                                 {
-                                    if (sceneObject && sceneObject is T casted)
+                                    if (sceneObject && sceneObject.internalSceneObjectId.objectId == reference.objectId && sceneObject is T casted)
                                     {
                                         result = casted;
                                         return true;
@@ -153,7 +153,7 @@ namespace AggroBird.SceneObjects
                                 // Any of prefab type
                                 foreach (var sceneObject in table.Values)
                                 {
-                                    if (sceneObject && sceneObject is T casted)
+                                    if (sceneObject && sceneObject.internalSceneObjectId.objectId == reference.objectId && sceneObject is T casted)
                                     {
                                         result.Add(casted);
                                     }

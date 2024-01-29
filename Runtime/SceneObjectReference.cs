@@ -3,9 +3,9 @@ using System;
 using System.Globalization;
 using UnityEngine;
 
+#if UNITY_EDITOR
 namespace AggroBird.SceneObjects.Editor
 {
-#if UNITY_EDITOR
     public static class SceneObjectEditorUtility
     {
         internal static SceneObjectID GetSceneObjectID(this UnityEditor.GlobalObjectId globalObjectId)
@@ -33,8 +33,8 @@ namespace AggroBird.SceneObjects.Editor
             return false;
         }
     }
-#endif
 }
+#endif
 
 namespace AggroBird.SceneObjects
 {

@@ -239,7 +239,7 @@ namespace AggroBird.SceneObjects
 
             if (UnityEditor.EditorUtility.IsPersistent(go))
             {
-                var globalObjectId = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(go);
+                var globalObjectId = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this);
                 if (globalObjectId.identifierType == 1)
                 {
                     // Reset GUID and clear object ID on original prefabs

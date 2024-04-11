@@ -119,7 +119,7 @@ namespace AggroBird.SceneObjects
         // Find first scene object that matches reference within all current scenes
         public static bool TryFindSceneObject<T>(SceneObjectReference reference, out T result) where T : SceneObject
         {
-            if (reference)
+            if (reference.HasValue())
             {
                 foreach (var sceneGUIDObj in SceneGUID.AllScenes)
                 {
@@ -156,7 +156,7 @@ namespace AggroBird.SceneObjects
         // Find all scene objects that match reference within all current scenes
         public static T[] FindSceneObjects<T>(SceneObjectReference reference) where T : SceneObject
         {
-            if (reference)
+            if (reference.HasValue())
             {
                 List<T> list = ListBuffer<T>.Get();
                 foreach (var sceneGUIDObj in SceneGUID.AllScenes)

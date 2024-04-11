@@ -117,5 +117,10 @@ namespace AggroBird.SceneObjects
 
         public static implicit operator SceneObjectReference(SceneObjectReference<T> reference) => new(reference.guid, reference.objectId, reference.prefabId);
         public static implicit operator bool(SceneObjectReference<T> reference) => reference.guid != GUID.zero;
+        
+        public override string ToString()
+        {
+            return $"{guid.Upper:x16}{guid.Lower:x16}{objectId:x16}{prefabId:x16}";
+        }
     }
 }

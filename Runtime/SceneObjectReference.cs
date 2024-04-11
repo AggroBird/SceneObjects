@@ -54,7 +54,7 @@ namespace AggroBird.SceneObjects
 
         internal SceneObjectID GetSceneObjectID() => new(objectId, prefabId);
 
-        public static implicit operator bool(SceneObjectReference reference) => reference.guid != GUID.zero;
+        public readonly bool HasValue() => guid != GUID.zero;
 
         public bool Equals(SceneObjectReference other)
         {
@@ -68,6 +68,15 @@ namespace AggroBird.SceneObjects
         public override int GetHashCode()
         {
             return guid.GetHashCode() ^ (objectId.GetHashCode() << 2) ^ (prefabId.GetHashCode() >> 2);
+        }
+
+        public static bool operator ==(SceneObjectReference lhs, SceneObjectReference rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+        public static bool operator !=(SceneObjectReference lhs, SceneObjectReference rhs)
+        {
+            return !lhs.Equals(rhs);
         }
 
         public override string ToString()
@@ -116,8 +125,8 @@ namespace AggroBird.SceneObjects
         [SerializeField] internal ulong prefabId;
 
         public static implicit operator SceneObjectReference(SceneObjectReference<T> reference) => new(reference.guid, reference.objectId, reference.prefabId);
-        public static implicit operator bool(SceneObjectReference<T> reference) => reference.guid != GUID.zero;
-        
+        public readonly bool HasValue() => guid != GUID.zero;
+
         public override string ToString()
         {
             return $"{guid.Upper:x16}{guid.Lower:x16}{objectId:x16}{prefabId:x16}";

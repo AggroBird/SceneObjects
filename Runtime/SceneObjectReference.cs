@@ -19,7 +19,7 @@ namespace AggroBird.SceneObjects.Editor
         // If the return value is true, but the result is null, the object is located in another scene
         public static bool TryResolveSceneObjectReference<T>(SceneObjectReference<T> reference, out T result) where T : SceneObject
         {
-            if (reference && tryResolveSceneObjectReferenceInternal != null)
+            if (reference.HasValue() && tryResolveSceneObjectReferenceInternal != null)
             {
                 (bool found, SceneObject obj) = tryResolveSceneObjectReferenceInternal(reference.guid, reference.objectId, reference.prefabId, typeof(T));
                 if (found)

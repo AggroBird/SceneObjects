@@ -1,7 +1,6 @@
 using AggroBird.UnityExtend;
 using System;
 using System.Globalization;
-using UnityEngine;
 
 #if UNITY_EDITOR
 namespace AggroBird.SceneObjects.Editor
@@ -38,8 +37,15 @@ namespace AggroBird.SceneObjects.Editor
 
 namespace AggroBird.SceneObjects
 {
+    public interface ISceneObjectReference
+    {
+        GUID GUID { get; set; }
+        ulong ObjectID { get; set; }
+        ulong PrefabId { get; set; }
+    }
+
     // General reference (can be used to find scene objects)
-    public readonly struct SceneObjectReference
+    public struct SceneObjectReference : ISceneObjectReference
     {
         public SceneObjectReference(GUID guid, ulong objectId, ulong prefabId)
         {
@@ -48,24 +54,28 @@ namespace AggroBird.SceneObjects
             this.prefabId = prefabId;
         }
 
-        public readonly GUID guid;
-        public readonly ulong objectId;
-        public readonly ulong prefabId;
+        public GUID guid;
+        public ulong objectId;
+        public ulong prefabId;
 
-        internal SceneObjectID GetSceneObjectID() => new(objectId, prefabId);
+        GUID ISceneObjectReference.GUID { get => guid; set => guid = value; }
+        ulong ISceneObjectReference.ObjectID { get => objectId; set => objectId = value; }
+        ulong ISceneObjectReference.PrefabId { get => prefabId; set => prefabId = value; }
+
+        internal readonly SceneObjectID GetSceneObjectID() => new(objectId, prefabId);
 
         public readonly bool HasValue() => guid != GUID.zero;
 
-        public bool Equals(SceneObjectReference other)
+        public readonly bool Equals(SceneObjectReference other)
         {
             return guid.Equals(other.guid) && objectId.Equals(other.objectId) && prefabId.Equals(other.prefabId);
         }
 
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
             return obj is SceneObjectReference other && Equals(other);
         }
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             return guid.GetHashCode() ^ (objectId.GetHashCode() << 2) ^ (prefabId.GetHashCode() >> 2);
         }
@@ -79,7 +89,7 @@ namespace AggroBird.SceneObjects
             return !lhs.Equals(rhs);
         }
 
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{guid.Upper:x16}{guid.Lower:x16}{objectId:x16}{prefabId:x16}";
         }
@@ -109,7 +119,7 @@ namespace AggroBird.SceneObjects
 
     // Property field (can only be assigned in inspector)
     [Serializable]
-    public struct SceneObjectReference<T> where T : SceneObject
+    public struct SceneObjectReference<T> : ISceneObjectReference where T : SceneObject
     {
         public SceneObjectReference(GUID guid, ulong objectId, ulong prefabId)
         {
@@ -122,10 +132,14 @@ namespace AggroBird.SceneObjects
         public ulong objectId;
         public ulong prefabId;
 
+        GUID ISceneObjectReference.GUID { get => guid; set => guid = value; }
+        ulong ISceneObjectReference.ObjectID { get => objectId; set => objectId = value; }
+        ulong ISceneObjectReference.PrefabId { get => prefabId; set => prefabId = value; }
+
         public static implicit operator SceneObjectReference(SceneObjectReference<T> reference) => new(reference.guid, reference.objectId, reference.prefabId);
         public readonly bool HasValue() => guid != GUID.zero;
 
-        public override string ToString()
+        public override readonly string ToString()
         {
             return $"{guid.Upper:x16}{guid.Lower:x16}{objectId:x16}{prefabId:x16}";
         }

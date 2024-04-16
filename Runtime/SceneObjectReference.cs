@@ -48,9 +48,9 @@ namespace AggroBird.SceneObjects
             this.prefabId = prefabId;
         }
 
-        internal readonly GUID guid;
-        internal readonly ulong objectId;
-        internal readonly ulong prefabId;
+        public readonly GUID guid;
+        public readonly ulong objectId;
+        public readonly ulong prefabId;
 
         internal SceneObjectID GetSceneObjectID() => new(objectId, prefabId);
 
@@ -111,18 +111,16 @@ namespace AggroBird.SceneObjects
     [Serializable]
     public struct SceneObjectReference<T> where T : SceneObject
     {
-#if UNITY_EDITOR
-        internal SceneObjectReference(GUID guid, ulong objectId, ulong prefabId)
+        public SceneObjectReference(GUID guid, ulong objectId, ulong prefabId)
         {
             this.guid = guid;
             this.objectId = objectId;
             this.prefabId = prefabId;
         }
-#endif
 
-        [SerializeField] internal GUID guid;
-        [SerializeField] internal ulong objectId;
-        [SerializeField] internal ulong prefabId;
+        public GUID guid;
+        public ulong objectId;
+        public ulong prefabId;
 
         public static implicit operator SceneObjectReference(SceneObjectReference<T> reference) => new(reference.guid, reference.objectId, reference.prefabId);
         public readonly bool HasValue() => guid != GUID.zero;

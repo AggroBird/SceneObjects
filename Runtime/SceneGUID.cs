@@ -56,6 +56,23 @@ namespace AggroBird.SceneObjects
         // All pre-placed scene prefab instances, grouped by GUID
         private readonly Dictionary<GUID, Dictionary<SceneObjectID, SceneObject>> allLocalScenePrefabInstances = new();
 
+        // Utility function to get a new ID in case of a collision (Object.Instantiated scene object)
+        // Granted instantiation happens after SceneObject.Awake(), all scene objects should have already
+        // had their ID's registered
+        private ulong lastReassignedObjectId = 0;
+        private ulong GetUniquePrefabID(ulong objectId)
+        {
+            ulong prefabId = ++lastReassignedObjectId;
+
+            // Ensure ID not 0 or in use
+            while (prefabId == 0 || allLocalSceneObjects.ContainsKey(new(objectId, prefabId)))
+            {
+                prefabId++;
+            }
+
+            return prefabId;
+        }
+
         internal bool TryFindSceneObject<T>(SceneObjectReference reference, out T result) where T : SceneObject
         {
             if (reference.guid != GUID.zero)
@@ -175,9 +192,8 @@ namespace AggroBird.SceneObjects
                 {
                     if (sceneObject.internalSceneObjectId.prefabId == 0)
                     {
-                        // TODO: instantiated prefabs
-                        Debug.LogWarning("NYI: Instantiated object registration");
-                        return GUID.zero;
+                        // Instantiated prefab: get unique new ID
+                        sceneObject.internalSceneObjectId.prefabId = GetUniquePrefabID(sceneObject.internalSceneObjectId.objectId);
                     }
 
                     // Add to prefab instance table

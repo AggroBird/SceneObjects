@@ -441,7 +441,7 @@ namespace AggroBird.SceneObjects.Editor
             SceneObjectFilter filter = constraint == null ? SceneObjectFilter.AllObjects : constraint.filter;
 
             EditorGUI.BeginChangeCheck();
-            UnityObject newObj = EditorGUI.ObjectField(position, showValue, referenceType, filter != SceneObjectFilter.OnlyPrefabs);
+            SceneObject newObj = EditorGUI.ObjectField(position, showValue, referenceType, filter != SceneObjectFilter.OnlyPrefabs) as SceneObject;
             if (EditorGUI.EndChangeCheck())
             {
                 if (newObj)
@@ -471,6 +471,12 @@ namespace AggroBird.SceneObjects.Editor
                     }
                     else if (globalObjectId.identifierType == 2)
                     {
+                        if (guid != newObj.internalSceneObjectGuid && prefabId == 0)
+                        {
+                            Debug.LogError($"Object '{newObj}' has an invalid GUID. This probably means it was a prefab instance which turned into a scene object by starting the editor.");
+                            return;
+                        }
+
                         if (filter == SceneObjectFilter.OnlyPrefabs)
                         {
                             Debug.LogError($"Field '{fieldInfo.Name}' does not accept scene object references");

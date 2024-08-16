@@ -97,7 +97,14 @@ namespace AggroBird.SceneObjects
         // Returns an invalid reference if the scene is not playing or if the object is an uninstantiated prefab
         public SceneObjectReference GetReference()
         {
-            if (sceneGUID == GUID.zero || internalSceneObjectId.prefabId == 0)
+            // Ensure valid
+            if (sceneGUID == GUID.zero || internalSceneObjectId.objectId == 0)
+            {
+                return default;
+            }
+
+            // Ensure instantiated if prefab
+            if (sceneGUID != internalSceneObjectGuid && internalSceneObjectId.prefabId == 0)
             {
                 return default;
             }
@@ -242,7 +249,7 @@ namespace AggroBird.SceneObjects
                 var globalObjectId = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this);
                 if (globalObjectId.identifierType == 1)
                 {
-                    // Reset GUID and clear object ID on original prefabs
+                    // Reset GUID to asset and clear object ID on original prefabs
                     GUID assetGUID = new(globalObjectId.assetGUID.ToString());
                     SceneObjectID sceneObjectID = globalObjectId.GetSceneObjectID();
                     if (assetGUID != internalSceneObjectGuid || internalSceneObjectId != sceneObjectID)
@@ -268,7 +275,7 @@ namespace AggroBird.SceneObjects
                     SceneObjectID sceneObjectID = globalObjectId.GetSceneObjectID();
                     if (globalObjectId.targetPrefabId == 0)
                     {
-                        // Reset GUID and object ID on regular objects
+                        // Reset GUID to scene and object ID on regular objects
                         GUID sceneGUID = new(globalObjectId.assetGUID.ToString());
                         if (internalSceneObjectGuid != sceneGUID || internalSceneObjectId != sceneObjectID)
                         {

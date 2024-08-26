@@ -163,36 +163,58 @@ namespace AggroBird.SceneObjects
         // Find all scene objects that match reference within all current scenes
         public static T[] FindSceneObjects<T>(SceneObjectReference reference) where T : SceneObject
         {
-            if (reference.HasValue())
-            {
-                List<T> list = ListBuffer<T>.Get();
-                foreach (var sceneGUIDObj in SceneGUID.AllScenes)
-                {
-                    sceneGUIDObj.FindSceneObjects(reference, list);
-                }
-                return list.ToArray();
-            }
-            return Array.Empty<T>();
+            List<T> list = ListBuffer<T>.Get();
+            FindSceneObjects(reference, list);
+            return list.ToArray();
         }
         public static T[] FindSceneObjects<T>(SceneObjectReference<T> reference) where T : SceneObject
         {
-            return FindSceneObjects<T>((SceneObjectReference)reference);
+            List<T> list = ListBuffer<T>.Get();
+            FindSceneObjects((SceneObjectReference)reference, list);
+            return list.ToArray();
+        }
+        public static void FindSceneObjects<T>(SceneObjectReference reference, List<T> result) where T : SceneObject
+        {
+            result.Clear();
+
+            if (reference.HasValue())
+            {
+                foreach (var sceneGUIDObj in SceneGUID.AllScenes)
+                {
+                    sceneGUIDObj.FindSceneObjects(reference, result);
+                }
+            }
+        }
+        public static void FindSceneObjects<T>(SceneObjectReference<T> reference, List<T> result) where T : SceneObject
+        {
+            FindSceneObjects((SceneObjectReference)reference, result);
         }
 
         // Find all scene objects that match reference within a specific scene
         public static T[] FindSceneObjects<T>(Scene scene, SceneObjectReference reference) where T : SceneObject
         {
-            if (SceneGUID.TryGetSceneGUIDObject(scene, out var sceneGUIDObj))
-            {
-                List<T> list = ListBuffer<T>.Get();
-                sceneGUIDObj.FindSceneObjects(reference, list);
-                return list.ToArray();
-            }
-            return Array.Empty<T>();
+            List<T> list = ListBuffer<T>.Get();
+            FindSceneObjects(scene, reference, list);
+            return list.ToArray();
         }
         public static T[] FindSceneObjects<T>(Scene scene, SceneObjectReference<T> reference) where T : SceneObject
         {
-            return FindSceneObjects<T>(scene, (SceneObjectReference)reference);
+            List<T> list = ListBuffer<T>.Get();
+            FindSceneObjects(scene, (SceneObjectReference)reference, list);
+            return list.ToArray();
+        }
+        public static void FindSceneObjects<T>(Scene scene, SceneObjectReference reference, List<T> result) where T : SceneObject
+        {
+            result.Clear();
+
+            if (SceneGUID.TryGetSceneGUIDObject(scene, out var sceneGUIDObj))
+            {
+                sceneGUIDObj.FindSceneObjects(reference, result);
+            }
+        }
+        public static void FindSceneObjects<T>(Scene scene, SceneObjectReference<T> reference, List<T> result) where T : SceneObject
+        {
+            FindSceneObjects(scene, (SceneObjectReference)reference, result);
         }
 
 

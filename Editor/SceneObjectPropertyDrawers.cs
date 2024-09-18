@@ -336,7 +336,7 @@ namespace AggroBird.SceneObjects.Editor
                         {
                             case ReferenceType.PrefabReference:
                             {
-                                SceneObject prefabObject = AssetDatabase.LoadAssetAtPath<SceneObject>(assetPath);
+                                GameObject prefabRootGameObject = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
 
                                 // Fetch nested prefab child
                                 bool TryFindCorrectPrefabObject(out SceneObject targetObject)
@@ -346,7 +346,7 @@ namespace AggroBird.SceneObjects.Editor
                                     SceneObjectID targetObjectID = new(objectId, prefabId);
 
                                     // Try the components on the prefab root first
-                                    foreach (SceneObject sceneObject in prefabObject.GetComponents<SceneObject>())
+                                    foreach (SceneObject sceneObject in prefabRootGameObject.GetComponents<SceneObject>())
                                     {
                                         if (sceneObject.internalSceneObjectId == targetObjectID)
                                         {
@@ -397,7 +397,7 @@ namespace AggroBird.SceneObjects.Editor
                                         {
                                             var currentSelection = Selection.objects;
 
-                                            AssetDatabase.OpenAsset(prefabObject);
+                                            AssetDatabase.OpenAsset(prefabRootGameObject);
 
                                             // Try to ping the target object
                                             if (TryFindCorrectPrefabObject(out targetObject))
@@ -416,7 +416,7 @@ namespace AggroBird.SceneObjects.Editor
                                     // Prefab
                                     if (PrefixButton(position, property, PrefabIconTexture, false, targetObject, referenceType))
                                     {
-                                        AssetDatabase.OpenAsset(prefabObject);
+                                        AssetDatabase.OpenAsset(prefabRootGameObject);
                                     }
                                 }
                                 else

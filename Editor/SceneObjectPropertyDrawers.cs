@@ -336,12 +336,86 @@ namespace AggroBird.SceneObjects.Editor
                         {
                             case ReferenceType.PrefabReference:
                             {
-                                // TODO: Nested prefab children
-                                var prefabObject = AssetDatabase.LoadAssetAtPath<SceneObject>(assetPath);
-                                if (referenceType.IsAssignableFrom(prefabObject.GetType()))
+                                SceneObject prefabObject = AssetDatabase.LoadAssetAtPath<SceneObject>(assetPath);
+
+                                // Fetch nested prefab child
+                                bool TryFindCorrectPrefabObject(out SceneObject targetObject)
+                                {
+                                    targetObject = null;
+
+                                    SceneObjectID targetObjectID = new(objectId, prefabId);
+
+                                    // Try the components on the prefab root first
+                                    foreach (SceneObject sceneObject in prefabObject.GetComponents<SceneObject>())
+                                    {
+                                        if (sceneObject.internalSceneObjectId == targetObjectID)
+                                        {
+                                            targetObject = sceneObject;
+                                            break;
+                                        }
+                                    }
+
+                                    // Try to fetch reference from current prefab stage
+                                    var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+                                    if (prefabStage != null && prefabStage.assetPath == assetPath)
+                                    {
+                                        if (targetObject)
+                                        {
+                                            // Try components on the prefab root, but in the prefab stage this time
+                                            foreach (var sceneObject in prefabStage.prefabContentsRoot.GetComponents<SceneObject>())
+                                            {
+                                                if (sceneObject.internalSceneObjectId == targetObjectID)
+                                                {
+                                                    targetObject = sceneObject;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // Try components in the entire prefab to find the nested component
+                                            foreach (var sceneObject in prefabStage.prefabContentsRoot.GetComponentsInChildren<SceneObject>())
+                                            {
+                                                if (sceneObject.internalSceneObjectId == targetObjectID)
+                                                {
+                                                    targetObject = sceneObject;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    return targetObject;
+                                }
+
+
+                                if (!TryFindCorrectPrefabObject(out SceneObject targetObject))
+                                {
+                                    // Prefab reference
+                                    using (new CustomObjectFieldContentScope("Prefab reference", null))
+                                    {
+                                        if (PrefixButton(position, property, PrefabIconTexture, true, null, referenceType))
+                                        {
+                                            var currentSelection = Selection.objects;
+
+                                            AssetDatabase.OpenAsset(prefabObject);
+
+                                            // Try to ping the target object
+                                            if (TryFindCorrectPrefabObject(out targetObject))
+                                            {
+                                                EditorGUIUtility.PingObject(targetObject);
+                                            }
+
+                                            // Restore selection
+                                            Selection.objects = currentSelection;
+
+                                        }
+                                    }
+                                }
+                                else if (referenceType.IsAssignableFrom(targetObject.GetType()))
                                 {
                                     // Prefab
-                                    if (PrefixButton(position, property, PrefabIconTexture, true, prefabObject, referenceType))
+                                    if (PrefixButton(position, property, PrefabIconTexture, false, targetObject, referenceType))
                                     {
                                         AssetDatabase.OpenAsset(prefabObject);
                                     }
@@ -362,12 +436,12 @@ namespace AggroBird.SceneObjects.Editor
                                 bool isSceneOpen = SceneObjectEditorUtilityInternal.IsSceneOpen(assetPath, out bool isLoaded);
                                 if (isSceneOpen && isLoaded)
                                 {
-                                    if (SceneObjectEditorUtilityInternal.TryFindSceneObjectFromCache(guid, objectId, prefabId, out SceneObject sceneObject))
+                                    if (SceneObjectEditorUtilityInternal.TryFindSceneObjectFromCache(guid, objectId, prefabId, out SceneObject targetObject))
                                     {
-                                        if (referenceType.IsAssignableFrom(sceneObject.GetType()))
+                                        if (referenceType.IsAssignableFrom(targetObject.GetType()))
                                         {
                                             // Scene object
-                                            PrefixButton(position, property, SceneIconTexture, false, sceneObject, referenceType);
+                                            PrefixButton(position, property, SceneIconTexture, false, targetObject, referenceType);
                                         }
                                         else
                                         {
@@ -392,6 +466,12 @@ namespace AggroBird.SceneObjects.Editor
                                         if (PrefixButton(position, property, SceneIconTexture, true, null, referenceType))
                                         {
                                             EditorSceneManager.OpenScene(assetPath, isSceneOpen ? OpenSceneMode.Additive : OpenSceneMode.Single);
+
+                                            // Try to ping the target object
+                                            if (SceneObjectEditorUtilityInternal.TryFindSceneObjectFromCache(guid, objectId, prefabId, out SceneObject targetObject))
+                                            {
+                                                EditorGUIUtility.PingObject(targetObject);
+                                            }
                                         }
                                     }
                                 }
@@ -446,6 +526,56 @@ namespace AggroBird.SceneObjects.Editor
             {
                 if (newObj)
                 {
+                    if (EditorSceneManager.IsPreviewSceneObject(newObj))
+                    {
+                        List<int> childIndices = new();
+                        var transform = newObj.transform;
+                        while (transform.parent)
+                        {
+                            childIndices.Add(transform.GetSiblingIndex());
+                            transform = transform.parent;
+                        }
+                        var test = PrefabStageUtility.GetPrefabStage(newObj.gameObject).assetPath;
+                        GameObject prefabGameObject = AssetDatabase.LoadAssetAtPath<GameObject>(test);
+                        if (prefabGameObject)
+                        {
+                            for (int i = childIndices.Count - 1; i >= 0; i--)
+                            {
+                                int idx = childIndices[i];
+                                if (idx < prefabGameObject.transform.childCount)
+                                {
+                                    prefabGameObject = prefabGameObject.transform.GetChild(idx).gameObject;
+                                }
+                                else
+                                {
+                                    prefabGameObject = null;
+                                }
+                            }
+                            if (prefabGameObject)
+                            {
+                                int componentIndex = -1;
+                                int idx = 0;
+                                foreach (var component in newObj.GetComponents<Component>())
+                                {
+                                    if (component == newObj)
+                                    {
+                                        componentIndex = idx;
+                                        break;
+                                    }
+                                    idx++;
+                                }
+                                if (componentIndex != -1)
+                                {
+                                    var prefabComponents = prefabGameObject.GetComponents<Component>();
+                                    if (componentIndex < prefabComponents.Length && prefabComponents[componentIndex].GetType().Equals(newObj.GetType()))
+                                    {
+                                        newObj = prefabComponents[componentIndex] as SceneObject;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     GlobalObjectId globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(newObj);
                     GUID guid = new(globalObjectId.assetGUID.ToString());
                     ulong objectId = globalObjectId.targetObjectId;

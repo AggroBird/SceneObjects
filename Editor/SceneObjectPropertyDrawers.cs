@@ -388,7 +388,6 @@ namespace AggroBird.SceneObjects.Editor
                                     return targetObject;
                                 }
 
-
                                 if (!TryFindCorrectPrefabObject(out SceneObject targetObject))
                                 {
                                     // Prefab reference

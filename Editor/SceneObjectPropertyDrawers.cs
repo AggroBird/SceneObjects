@@ -528,17 +528,19 @@ namespace AggroBird.SceneObjects.Editor
                     if (EditorSceneManager.IsPreviewSceneObject(newObj))
                     {
                         // Attempt to resolve prefab stage reference
-                        List<int> childIndices = new();
-                        var transform = newObj.transform;
-                        while (transform.parent)
-                        {
-                            childIndices.Add(transform.GetSiblingIndex());
-                            transform = transform.parent;
-                        }
                         string assetPath = PrefabStageUtility.GetPrefabStage(newObj.gameObject).assetPath;
                         GameObject prefabGameObject = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
                         if (prefabGameObject)
                         {
+                            // Build index stack
+                            List<int> childIndices = new();
+                            var transform = newObj.transform;
+                            while (transform.parent)
+                            {
+                                childIndices.Add(transform.GetSiblingIndex());
+                                transform = transform.parent;
+                            }
+                            // Rewind sibling indices on prefab object
                             for (int i = childIndices.Count - 1; i >= 0; i--)
                             {
                                 int idx = childIndices[i];
@@ -553,6 +555,8 @@ namespace AggroBird.SceneObjects.Editor
                             }
                             if (prefabGameObject)
                             {
+                                // Find correct component by index
+                                // This code assumes that GetComponents returns components in the same order as the inspector
                                 int componentIndex = -1;
                                 int idx = 0;
                                 foreach (var component in newObj.GetComponents<Component>())

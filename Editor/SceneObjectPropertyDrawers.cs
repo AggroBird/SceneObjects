@@ -171,10 +171,17 @@ namespace AggroBird.SceneObjects.Editor
                 switch (GetReferenceType(assetPath))
                 {
                     case ReferenceType.PrefabReference:
-                        var prefabObject = AssetDatabase.LoadAssetAtPath<SceneObject>(assetPath);
-                        if (referenceType.IsAssignableFrom(prefabObject.GetType()))
+                        GameObject prefabObject = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                        if (prefabObject)
                         {
-                            return (true, prefabObject);
+                            SceneObjectID targetObjectID = new(objectId, prefabId);
+                            foreach (var sceneObject in prefabObject.GetComponentsInChildren<SceneObject>())
+                            {
+                                if (sceneObject.internalSceneObjectId == targetObjectID && referenceType.IsAssignableFrom(sceneObject.GetType()))
+                                {
+                                    return (true, sceneObject);
+                                }
+                            }
                         }
                         break;
                     case ReferenceType.SceneObjectReference:

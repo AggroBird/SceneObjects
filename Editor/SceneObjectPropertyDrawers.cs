@@ -370,30 +370,14 @@ namespace AggroBird.SceneObjects.Editor
                                     var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
                                     if (prefabStage != null && prefabStage.assetPath == assetPath)
                                     {
-                                        if (targetObject)
+                                        // Try components in the entire prefab to find the nested component
+                                        foreach (var sceneObject in prefabStage.prefabContentsRoot.GetComponentsInChildren<SceneObject>(true))
                                         {
-                                            // Try components on the prefab root, but in the prefab stage this time
-                                            foreach (var sceneObject in prefabStage.prefabContentsRoot.GetComponents<SceneObject>())
+                                            if (sceneObject.internalSceneObjectId == targetObjectID)
                                             {
-                                                if (sceneObject.internalSceneObjectId == targetObjectID)
-                                                {
-                                                    isPrefabStageObject = true;
-                                                    targetObject = sceneObject;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // Try components in the entire prefab to find the nested component
-                                            foreach (var sceneObject in prefabStage.prefabContentsRoot.GetComponentsInChildren<SceneObject>())
-                                            {
-                                                if (sceneObject.internalSceneObjectId == targetObjectID)
-                                                {
-                                                    isPrefabStageObject = true;
-                                                    targetObject = sceneObject;
-                                                    break;
-                                                }
+                                                isPrefabStageObject = true;
+                                                targetObject = sceneObject;
+                                                break;
                                             }
                                         }
                                     }
@@ -401,7 +385,7 @@ namespace AggroBird.SceneObjects.Editor
                                     // Finally, try to find the component in the asset itself
                                     if (!targetObject)
                                     {
-                                        foreach (SceneObject sceneObject in prefabGameObject.GetComponentsInChildren<SceneObject>())
+                                        foreach (SceneObject sceneObject in prefabGameObject.GetComponentsInChildren<SceneObject>(true))
                                         {
                                             if (sceneObject.internalSceneObjectId == targetObjectID)
                                             {

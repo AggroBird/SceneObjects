@@ -178,7 +178,7 @@ namespace AggroBird.SceneObjects.Editor
                             if (!SceneObjectReferenceCache.TryGetSceneObject(key, out var cacheObject) || !referenceType.IsAssignableFrom(cacheObject.GetType()))
                             {
                                 SceneObjectID targetObjectID = new(objectId, prefabId);
-                                foreach (var sceneObject in prefabGameObject.GetComponentsInChildren<SceneObject>())
+                                foreach (var sceneObject in prefabGameObject.GetComponentsInChildren<SceneObject>(true))
                                 {
                                     if (sceneObject.internalSceneObjectId == targetObjectID)
                                     {

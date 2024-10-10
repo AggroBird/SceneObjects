@@ -346,21 +346,12 @@ namespace AggroBird.SceneObjects.Editor
                                 GameObject prefabRootGameObject = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
 
                                 // Fetch nested prefab child
-                                bool TryFindCorrectPrefabObject(out SceneObject targetObject)
+                                bool TryFindCorrectPrefabObject(out SceneObject targetObject, out bool isPrefabStageObject)
                                 {
                                     targetObject = null;
+                                    isPrefabStageObject = false;
 
                                     SceneObjectID targetObjectID = new(objectId, prefabId);
-
-                                    // Try the components on the prefab root first
-                                    foreach (SceneObject sceneObject in prefabRootGameObject.GetComponents<SceneObject>())
-                                    {
-                                        if (sceneObject.internalSceneObjectId == targetObjectID)
-                                        {
-                                            targetObject = sceneObject;
-                                            break;
-                                        }
-                                    }
 
                                     // Try to fetch reference from current prefab stage
                                     var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
@@ -373,6 +364,7 @@ namespace AggroBird.SceneObjects.Editor
                                             {
                                                 if (sceneObject.internalSceneObjectId == targetObjectID)
                                                 {
+                                                    isPrefabStageObject = true;
                                                     targetObject = sceneObject;
                                                     break;
                                                 }
@@ -385,6 +377,7 @@ namespace AggroBird.SceneObjects.Editor
                                             {
                                                 if (sceneObject.internalSceneObjectId == targetObjectID)
                                                 {
+                                                    isPrefabStageObject = true;
                                                     targetObject = sceneObject;
                                                     break;
                                                 }
@@ -392,46 +385,51 @@ namespace AggroBird.SceneObjects.Editor
                                         }
                                     }
 
+                                    // Finally, try to find the component in the asset itself
+                                    if (!targetObject)
+                                    {
+                                        // Try the components on the prefab root first
+                                        foreach (SceneObject sceneObject in prefabRootGameObject.GetComponentsInChildren<SceneObject>())
+                                        {
+                                            if (sceneObject.internalSceneObjectId == targetObjectID)
+                                            {
+                                                targetObject = sceneObject;
+                                                break;
+                                            }
+                                        }
+                                    }
+
                                     return targetObject;
                                 }
 
-                                if (!TryFindCorrectPrefabObject(out SceneObject targetObject))
+                                if (TryFindCorrectPrefabObject(out SceneObject targetObject, out bool isPrefabStageObject))
                                 {
-                                    // Prefab reference
-                                    using (new CustomObjectFieldContentScope("Prefab reference", null))
+                                    if (referenceType.IsAssignableFrom(targetObject.GetType()))
                                     {
-                                        if (PrefixButton(position, property, PrefabIconTexture, true, null, referenceType))
+                                        // Prefab reference
+                                        if (PrefixButton(position, property, PrefabIconTexture, !isPrefabStageObject, targetObject, referenceType))
                                         {
                                             var currentSelection = Selection.objects;
 
                                             AssetDatabase.OpenAsset(prefabRootGameObject);
 
                                             // Try to ping the target object
-                                            if (TryFindCorrectPrefabObject(out targetObject))
+                                            if (TryFindCorrectPrefabObject(out targetObject, out isPrefabStageObject) && isPrefabStageObject)
                                             {
                                                 EditorGUIUtility.PingObject(targetObject);
                                             }
 
                                             // Restore selection
                                             Selection.objects = currentSelection;
-
                                         }
                                     }
-                                }
-                                else if (referenceType.IsAssignableFrom(targetObject.GetType()))
-                                {
-                                    // Prefab
-                                    if (PrefixButton(position, property, PrefabIconTexture, false, targetObject, referenceType))
+                                    else
                                     {
-                                        AssetDatabase.OpenAsset(prefabRootGameObject);
-                                    }
-                                }
-                                else
-                                {
-                                    // Type mismatch
-                                    using (new CustomObjectFieldContentScope("Type mismatch", null))
-                                    {
-                                        PrefixButton(position, property, PrefabIconTexture, false, null, referenceType);
+                                        // Type mismatch
+                                        using (new CustomObjectFieldContentScope("Type mismatch", null))
+                                        {
+                                            PrefixButton(position, property, PrefabIconTexture, false, null, referenceType);
+                                        }
                                     }
                                 }
                             }

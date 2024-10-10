@@ -447,7 +447,7 @@ namespace AggroBird.SceneObjects.Editor
                                 else
                                 {
                                     // Missing object
-                                    PrefixButton(position, property, SceneIconTexture, false, EditorExtendUtility.MissingObject, referenceType);
+                                    PrefixButton(position, property, PrefabIconTexture, false, EditorExtendUtility.MissingObject, referenceType);
                                 }
                             }
                             break;

@@ -444,6 +444,11 @@ namespace AggroBird.SceneObjects.Editor
                                         }
                                     }
                                 }
+                                else
+                                {
+                                    // Missing object
+                                    PrefixButton(position, property, SceneIconTexture, false, EditorExtendUtility.MissingObject, referenceType);
+                                }
                             }
                             break;
 

@@ -183,7 +183,7 @@ namespace AggroBird.SceneObjects
         }
 
 
-        private GUID RegisterLocalSceneObject(SceneObject sceneObject)
+        private void RegisterLocalSceneObject(SceneObject sceneObject)
         {
             if (sceneObject.internalSceneObjectGuid != GUID.zero)
             {
@@ -207,23 +207,47 @@ namespace AggroBird.SceneObjects
                 // Add to all objects table
                 allLocalSceneObjects[sceneObject.internalSceneObjectId] = sceneObject;
 
-                return sceneGUID;
+                // Store GUID in scene object
+                sceneObject.sceneGUID = sceneGUID;
             }
             else
             {
-                return GUID.zero;
+                // Invalid scene object
+                sceneObject.sceneGUID = GUID.zero;
             }
         }
-        internal static GUID RegisterSceneObject(SceneObject sceneObject)
+        private void UnregisterLocalSceneObject(SceneObject sceneObject)
+        {
+            if (allLocalScenePrefabInstances.TryGetValue(sceneObject.internalSceneObjectGuid, out var table))
+            {
+                table.Remove(sceneObject.internalSceneObjectId);
+                if (table.Count == 0)
+                {
+                    allLocalScenePrefabInstances.Remove(sceneObject.internalSceneObjectGuid);
+                }
+            }
+
+            allLocalSceneObjects.Remove(sceneObject.internalSceneObjectId);
+        }
+
+        internal static void RegisterSceneObject(SceneObject sceneObject)
         {
             if (TryGetSceneGUIDObject(sceneObject.gameObject.scene, out SceneGUID sceneGUIDObj))
             {
                 // Register this object to the scene that its currently in
-                return sceneGUIDObj.RegisterLocalSceneObject(sceneObject);
+                sceneGUIDObj.RegisterLocalSceneObject(sceneObject);
             }
             else
             {
-                return GUID.zero;
+                // Failed to find scene object
+                sceneObject.sceneGUID = GUID.zero;
+            }
+        }
+        internal static void UnregisterSceneObject(SceneObject sceneObject)
+        {
+            if (TryGetSceneGUIDObject(sceneObject.gameObject.scene, out SceneGUID sceneGUIDObj))
+            {
+                sceneGUIDObj.UnregisterLocalSceneObject(sceneObject);
             }
         }
 

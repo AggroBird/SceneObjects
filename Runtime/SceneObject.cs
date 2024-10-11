@@ -66,7 +66,7 @@ namespace AggroBird.SceneObjects
         [SerializeField] internal SceneObjectID internalSceneObjectId;
 
         // The GUID of the scene this object is in at play time (zero if registration failed)
-        private GUID sceneGUID;
+        internal GUID sceneGUID;
 
         // Check if this object is referenced by the provided reference
         // (Either its part of the same prefab family, or it is the actual scene object pointed to)
@@ -220,7 +220,14 @@ namespace AggroBird.SceneObjects
 
         protected virtual void Awake()
         {
-            sceneGUID = SceneGUID.RegisterSceneObject(this);
+            SceneGUID.RegisterSceneObject(this);
+        }
+        protected virtual void OnDestroy()
+        {
+            if (sceneGUID != GUID.zero)
+            {
+                SceneGUID.UnregisterSceneObject(this);
+            }
         }
 
         protected virtual void OnValidate()

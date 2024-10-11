@@ -541,100 +541,65 @@ namespace AggroBird.SceneObjects.Editor
                     {
                         // Attempt to resolve prefab stage reference
                         string assetPath = PrefabStageUtility.GetPrefabStage(newObj.gameObject).assetPath;
-                        GameObject prefabGameObject = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-                        if (prefabGameObject)
+                        if (!string.IsNullOrEmpty(assetPath))
                         {
-                            // Build index stack
-                            List<int> childIndices = new();
-                            var transform = newObj.transform;
-                            while (transform.parent)
-                            {
-                                childIndices.Add(transform.GetSiblingIndex());
-                                transform = transform.parent;
-                            }
-                            // Rewind sibling indices on prefab object
-                            for (int i = childIndices.Count - 1; i >= 0; i--)
-                            {
-                                int idx = childIndices[i];
-                                if (idx < prefabGameObject.transform.childCount)
-                                {
-                                    prefabGameObject = prefabGameObject.transform.GetChild(idx).gameObject;
-                                }
-                                else
-                                {
-                                    prefabGameObject = null;
-                                }
-                            }
-                            if (prefabGameObject)
-                            {
-                                // Find correct component by index
-                                // This code assumes that GetComponents returns components in the same order as the inspector
-                                int componentIndex = -1;
-                                int idx = 0;
-                                foreach (var component in newObj.GetComponents<Component>())
-                                {
-                                    if (component == newObj)
-                                    {
-                                        componentIndex = idx;
-                                        break;
-                                    }
-                                    idx++;
-                                }
-                                if (componentIndex != -1)
-                                {
-                                    var prefabComponents = prefabGameObject.GetComponents<Component>();
-                                    if (componentIndex < prefabComponents.Length && prefabComponents[componentIndex].GetType().Equals(newObj.GetType()))
-                                    {
-                                        newObj = prefabComponents[componentIndex] as SceneObject;
-                                    }
-                                }
-                            }
+                            GlobalObjectId globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(newObj);
+                            GUID guid = new(AssetDatabase.AssetPathToGUID(assetPath));
+                            ulong objectId = globalObjectId.targetObjectId;
+                            ulong prefabId = globalObjectId.targetPrefabId;
+
+                            // Assign prefab from stage reference
+                            SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
                         }
-                    }
-
-                    GlobalObjectId globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(newObj);
-                    GUID guid = new(globalObjectId.assetGUID.ToString());
-                    ulong objectId = globalObjectId.targetObjectId;
-                    ulong prefabId = globalObjectId.targetPrefabId;
-
-                    if (guid == default)
-                    {
-                        // TODO: Nested prefab children
-                        Debug.LogError($"Object '{newObj}' has no GUID, possibly because it is within a scene that has not been saved yet.");
-                        return;
-                    }
-
-                    if (globalObjectId.identifierType == 1)
-                    {
-                        if (filter == SceneObjectFilter.OnlySceneObjects)
+                        else
                         {
-                            Debug.LogError($"Field '{fieldInfo.Name}' does not accept prefab references");
+                            Debug.LogError($"Object '{newObj}' has no GUID, possibly because it is within a prefab that has not been saved yet.");
                             return;
                         }
-
-                        // Assign prefab
-                        SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
-                    }
-                    else if (globalObjectId.identifierType == 2)
-                    {
-                        if (guid != newObj.internalSceneObjectGuid && prefabId == 0)
-                        {
-                            Debug.LogError($"Object '{newObj}' has an invalid GUID. This probably means it was a prefab instance which turned into a scene object by starting the editor.");
-                            return;
-                        }
-
-                        if (filter == SceneObjectFilter.OnlyPrefabs)
-                        {
-                            Debug.LogError($"Field '{fieldInfo.Name}' does not accept scene object references");
-                            return;
-                        }
-
-                        // Assign scene object or prefab instance
-                        SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
                     }
                     else
                     {
-                        Debug.LogError($"Object '{newObj}' is not a valid scene object reference.");
+                        GlobalObjectId globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(newObj);
+                        GUID guid = new(globalObjectId.assetGUID.ToString());
+                        ulong objectId = globalObjectId.targetObjectId;
+                        ulong prefabId = globalObjectId.targetPrefabId;
+
+                        if (guid == default)
+                        {
+                            Debug.LogError($"Object '{newObj}' has no GUID, possibly because it is within a scene that has not been saved yet.");
+                        }
+                        else if (globalObjectId.identifierType == 1)
+                        {
+                            if (filter == SceneObjectFilter.OnlySceneObjects)
+                            {
+                                Debug.LogError($"Field '{fieldInfo.Name}' does not accept prefab references");
+                            }
+                            else
+                            {
+                                // Assign prefab
+                                SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
+                            }
+                        }
+                        else if (globalObjectId.identifierType == 2)
+                        {
+                            if (guid != newObj.internalSceneObjectGuid && prefabId == 0)
+                            {
+                                Debug.LogError($"Object '{newObj}' has an invalid GUID. This probably means it was a prefab instance which turned into a scene object by starting the editor.");
+                            }
+                            else if (filter == SceneObjectFilter.OnlyPrefabs)
+                            {
+                                Debug.LogError($"Field '{fieldInfo.Name}' does not accept scene object references");
+                            }
+                            else
+                            {
+                                // Assign scene object or prefab instance
+                                SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogError($"Object '{newObj}' is not a valid scene object reference.");
+                        }
                     }
                 }
                 else

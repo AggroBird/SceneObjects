@@ -563,23 +563,14 @@ namespace AggroBird.SceneObjects.Editor
                                 else
                                 {
                                     prefabGameObject = null;
+                                    break;
                                 }
                             }
                             if (prefabGameObject)
                             {
                                 // Find correct component by index
                                 // This code assumes that GetComponents returns components in the same order as the inspector
-                                int componentIndex = -1;
-                                int idx = 0;
-                                foreach (var component in newObj.GetComponents<Component>())
-                                {
-                                    if (component == newObj)
-                                    {
-                                        componentIndex = idx;
-                                        break;
-                                    }
-                                    idx++;
-                                }
+                                int componentIndex = Array.IndexOf(newObj.GetComponents<Component>(), newObj);
                                 if (componentIndex != -1)
                                 {
                                     var prefabComponents = prefabGameObject.GetComponents<Component>();
@@ -601,10 +592,8 @@ namespace AggroBird.SceneObjects.Editor
                     {
                         // TODO: Nested prefab children
                         Debug.LogError($"Object '{newObj}' has no GUID, possibly because it is within a scene that has not been saved yet.");
-                        return;
                     }
-
-                    if (globalObjectId.identifierType == 1)
+                    else if (globalObjectId.identifierType == 1)
                     {
                         if (filter == SceneObjectFilter.OnlySceneObjects)
                         {

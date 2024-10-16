@@ -59,7 +59,7 @@ namespace AggroBird.SceneObjects.Editor
 
                 position.height = EditorExtendUtility.SingleLineHeight;
                 ShowProperty(position, property.FindPropertyRelative("objectId"), objectIdLabel);
-                position.y += EditorExtendUtility.SinglePropertyHeight;
+                position.y += EditorExtendUtility.TotalPropertyHeight;
                 ShowProperty(position, property.FindPropertyRelative("prefabId"), prefabIdLabel);
             }
         }

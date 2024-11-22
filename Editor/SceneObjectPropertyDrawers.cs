@@ -18,8 +18,6 @@ namespace AggroBird.SceneObjects.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            EditorGUI.BeginProperty(position, label, property);
-
             using (new EditorGUI.DisabledGroupScope(true))
             {
                 position = EditorGUI.PrefixLabel(position, content);
@@ -35,8 +33,6 @@ namespace AggroBird.SceneObjects.Editor
                     EditorGUI.TextField(position, $"{upper:x16}{lower:x16}");
                 }
             }
-
-            EditorGUI.EndProperty();
         }
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

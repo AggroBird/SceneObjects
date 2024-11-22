@@ -8,7 +8,7 @@
 	"description": "Small Unity plugin for storing references to scene objects within prefabs and assets.",
 	"dependencies":
 	{
-		"com.aggrobird.unityextend": "1.0.98"
+		"com.aggrobird.unityextend": "1.0.103"
 	},
 	"author":
 	{

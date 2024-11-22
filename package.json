@@ -1,7 +1,7 @@
 {
 	"name": "com.aggrobird.sceneobjects",
 	"displayName": "Scene Objects",
-	"version": "1.0.10",
+	"version": "1.0.11",
 	"unity": "2022.3",
 	"keywords": ["Utility", "Scene", "Objects"],
 	"category": "Utility",

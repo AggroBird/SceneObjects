@@ -20,6 +20,8 @@ namespace AggroBird.SceneObjects.Editor
         {
             using (new EditorGUI.DisabledGroupScope(true))
             {
+                EditorGUI.BeginProperty(position, label, property);
+
                 position = EditorGUI.PrefixLabel(position, content);
                 if (property.hasMultipleDifferentValues)
                 {
@@ -32,6 +34,8 @@ namespace AggroBird.SceneObjects.Editor
                     ulong lower = property.FindPropertyRelative((GUID def) => def.Lower).ulongValue;
                     EditorGUI.TextField(position, $"{upper:x16}{lower:x16}");
                 }
+
+                EditorGUI.EndProperty();
             }
         }
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -50,17 +54,10 @@ namespace AggroBird.SceneObjects.Editor
         {
             using (new EditorGUI.DisabledGroupScope(true))
             {
-                static void ShowProperty(Rect position, SerializedProperty property, GUIContent label)
-                {
-                    position = EditorGUI.PrefixLabel(position, label);
-                    EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
-                    EditorGUI.TextField(position, property.ulongValue.ToString());
-                }
-
                 position.height = EditorExtendUtility.SingleLineHeight;
-                ShowProperty(position, property.FindPropertyRelative("objectId"), objectIdLabel);
+                EditorGUI.PropertyField(position, property.FindPropertyRelative("objectId"), objectIdLabel);
                 position.y += EditorExtendUtility.TotalPropertyHeight;
-                ShowProperty(position, property.FindPropertyRelative("prefabId"), prefabIdLabel);
+                EditorGUI.PropertyField(position, property.FindPropertyRelative("prefabId"), prefabIdLabel);
             }
         }
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)

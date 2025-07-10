@@ -217,6 +217,22 @@ namespace AggroBird.SceneObjects
             FindSceneObjects(scene, (SceneObjectReference)reference, result);
         }
 
+        public static T[] FindAllSceneObjectsOfType<T>() where T : SceneObject
+        {
+            List<T> list = ListBuffer<T>.Get();
+            foreach (var sceneGUIDObj in SceneGUID.AllScenes)
+            {
+                foreach (var sceneObject in sceneGUIDObj.AllSceneObjects)
+                {
+                    if (sceneObject is T casted)
+                    {
+                        list.Add(casted);
+                    }
+                }
+            }
+            return list.ToArray();
+        }
+
 
         protected virtual void Awake()
         {

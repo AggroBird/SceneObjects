@@ -53,6 +53,7 @@ namespace AggroBird.SceneObjects
 
         // All pre-placed scene objects (regular scene objects and scene prefab instances)
         private readonly Dictionary<SceneObjectID, SceneObject> allLocalSceneObjects = new();
+        internal Dictionary<SceneObjectID, SceneObject>.ValueCollection AllSceneObjects => allLocalSceneObjects.Values;
         // All pre-placed scene prefab instances, grouped by GUID
         private readonly Dictionary<GUID, Dictionary<SceneObjectID, SceneObject>> allLocalScenePrefabInstances = new();
 

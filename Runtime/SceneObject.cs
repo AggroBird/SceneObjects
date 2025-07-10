@@ -246,8 +246,8 @@ namespace AggroBird.SceneObjects
         }
 
 #if UNITY_EDITOR
-        private static readonly string GUIDUpperPropertyPath = $"{nameof(internalSceneObjectGuid)}.{Utility.GetPropertyBackingFieldName("Upper")}";
-        private static readonly string GUIDLowerPropertyPath = $"{nameof(internalSceneObjectGuid)}.{Utility.GetPropertyBackingFieldName("Lower")}";
+        private static readonly string GUIDUpperPropertyPath = $"{nameof(internalSceneObjectGuid)}.{nameof(GUID.upper)}";
+        private static readonly string GUIDLowerPropertyPath = $"{nameof(internalSceneObjectGuid)}.{nameof(GUID.lower)}";
         private static bool IsGUIDModified(SceneObject obj)
         {
             foreach (var modification in UnityEditor.PrefabUtility.GetPropertyModifications(obj))

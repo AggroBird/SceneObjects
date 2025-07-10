@@ -30,8 +30,8 @@ namespace AggroBird.SceneObjects.Editor
                 }
                 else
                 {
-                    ulong upper = property.FindPropertyRelative((GUID def) => def.Upper).ulongValue;
-                    ulong lower = property.FindPropertyRelative((GUID def) => def.Lower).ulongValue;
+                    ulong upper = property.FindPropertyRelative("upper").ulongValue;
+                    ulong lower = property.FindPropertyRelative("lower").ulongValue;
                     EditorGUI.TextField(position, $"{upper:x16}{lower:x16}");
                 }
 
@@ -266,8 +266,8 @@ namespace AggroBird.SceneObjects.Editor
         internal static void GetSceneObjectReferenceValues(SerializedProperty property, out GUID guid, out ulong objectId, out ulong prefabId)
         {
             var guidProperty = property.FindPropertyRelative("guid");
-            ulong upper = guidProperty.FindPropertyRelative((GUID def) => def.Upper).ulongValue;
-            ulong lower = guidProperty.FindPropertyRelative((GUID def) => def.Lower).ulongValue;
+            ulong upper = guidProperty.FindPropertyRelative(nameof(GUID.upper)).ulongValue;
+            ulong lower = guidProperty.FindPropertyRelative(nameof(GUID.lower)).ulongValue;
             guid = new(upper, lower);
             objectId = property.FindPropertyRelative("objectId").ulongValue;
             prefabId = property.FindPropertyRelative("prefabId").ulongValue;
@@ -275,8 +275,8 @@ namespace AggroBird.SceneObjects.Editor
         internal static void SetSceneObjectReferenceValues(SerializedProperty property, GUID guid, ulong objectId, ulong prefabId)
         {
             var guidProperty = property.FindPropertyRelative("guid");
-            guidProperty.FindPropertyRelative((GUID def) => def.Upper).ulongValue = guid.Upper;
-            guidProperty.FindPropertyRelative((GUID def) => def.Lower).ulongValue = guid.Lower;
+            guidProperty.FindPropertyRelative(nameof(GUID.upper)).ulongValue = guid.upper;
+            guidProperty.FindPropertyRelative(nameof(GUID.lower)).ulongValue = guid.lower;
             property.FindPropertyRelative("objectId").ulongValue = objectId;
             property.FindPropertyRelative("prefabId").ulongValue = prefabId;
         }

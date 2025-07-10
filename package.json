@@ -1,14 +1,14 @@
 {
 	"name": "com.aggrobird.sceneobjects",
 	"displayName": "Scene Objects",
-	"version": "1.0.11",
+	"version": "1.0.12",
 	"unity": "2022.3",
 	"keywords": ["Utility", "Scene", "Objects"],
 	"category": "Utility",
 	"description": "Small Unity plugin for storing references to scene objects within prefabs and assets.",
 	"dependencies":
 	{
-		"com.aggrobird.unityextend": "1.0.103"
+		"com.aggrobird.unityextend": "1.0.116"
 	},
 	"author":
 	{

@@ -92,7 +92,7 @@ namespace AggroBird.SceneObjects
 
         public override readonly string ToString()
         {
-            return $"{guid.Upper:x16}{guid.Lower:x16}{objectId:x16}{prefabId:x16}";
+            return $"{guid.upper:x16}{guid.lower:x16}{objectId:x16}{prefabId:x16}";
         }
         public static bool TryParse(string str, out SceneObjectReference reference)
         {
@@ -142,7 +142,7 @@ namespace AggroBird.SceneObjects
 
         public override readonly string ToString()
         {
-            return $"{guid.Upper:x16}{guid.Lower:x16}{objectId:x16}{prefabId:x16}";
+            return $"{guid.upper:x16}{guid.lower:x16}{objectId:x16}{prefabId:x16}";
         }
     }
 }

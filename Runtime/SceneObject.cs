@@ -60,10 +60,12 @@ namespace AggroBird.SceneObjects
     {
         // In the case of a regular scene object, this contains the scene GUID
         // In the case of a scene prefab instance, this contains the prefab GUID
-        [SerializeField, SceneObjectGUID] internal GUID internalSceneObjectGuid;
+        [SerializeField, SceneObjectGUID]
+        internal GUID internalSceneObjectGuid;
         // For regular scene objects, objectId will be the scene object ID and prefabId will be 0
         // For prefab instances, objectId will be the scene object ID within the prefab and prefabId will be prefab instance ID
-        [SerializeField] internal SceneObjectID internalSceneObjectId;
+        [SerializeField]
+        internal SceneObjectID internalSceneObjectId;
 
         // The GUID of the scene this object is in at play time (zero if registration failed)
         internal GUID sceneGUID;
@@ -109,7 +111,7 @@ namespace AggroBird.SceneObjects
                 return default;
             }
 
-            return new(sceneGUID, internalSceneObjectId.objectId, internalSceneObjectId.prefabId);
+            return new(sceneGUID, internalSceneObjectId);
         }
 
 

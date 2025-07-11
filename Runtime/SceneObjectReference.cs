@@ -16,7 +16,7 @@ namespace AggroBird.SceneObjects.Editor
 
         // Editor only utility function for finding references outside of play time
         // If the return value is true, but the result is null, the object is located in another scene
-        public static bool TryResolveSceneObjectReference<T>(SceneObjectReference<T> reference, out T result) where T : SceneObject
+        public static bool TryResolveEditorSceneObjectReference<T>(SceneObjectReference<T> reference, out T result) where T : SceneObject
         {
             if (reference.HasValue() && tryResolveSceneObjectReferenceInternal != null)
             {
@@ -30,6 +30,13 @@ namespace AggroBird.SceneObjects.Editor
 
             result = default;
             return false;
+        }
+
+        // Editor only utility for getting the scene object reference outside of playtime
+        // Note that this does not equal the reference during playtime, and can only be used for identification within the editor
+        public static SceneObjectReference<T> GetEditorSceneObjectReference<T>(T sceneObject) where T : SceneObject
+        {
+            return sceneObject ? new(sceneObject.internalSceneObjectGuid, sceneObject.internalSceneObjectId) : default;
         }
     }
 }
@@ -53,6 +60,12 @@ namespace AggroBird.SceneObjects
             this.guid = guid;
             this.objectId = objectId;
             this.prefabId = prefabId;
+        }
+        internal SceneObjectReference(GUID guid, SceneObjectID sceneObjectID)
+        {
+            this.guid = guid;
+            objectId = sceneObjectID.objectId;
+            prefabId = sceneObjectID.prefabId;
         }
 
         public GUID guid;
@@ -127,6 +140,12 @@ namespace AggroBird.SceneObjects
             this.guid = guid;
             this.objectId = objectId;
             this.prefabId = prefabId;
+        }
+        internal SceneObjectReference(GUID guid, SceneObjectID sceneObjectID)
+        {
+            this.guid = guid;
+            objectId = sceneObjectID.objectId;
+            prefabId = sceneObjectID.prefabId;
         }
 
         public GUID guid;

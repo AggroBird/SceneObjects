@@ -10,7 +10,8 @@ namespace AggroBird.SceneObjects
     [DefaultExecutionOrder(int.MinValue)]
     internal sealed class SceneGUID : MonoBehaviour
     {
-        [SerializeField] private GUID sceneGUID;
+        [SerializeField]
+        private GUID sceneGUID;
 
         private int refCount = 0;
 

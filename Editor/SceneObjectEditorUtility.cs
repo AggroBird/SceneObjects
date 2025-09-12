@@ -234,7 +234,28 @@ namespace AggroBird.SceneObjects.Editor
         // Note that this does not equal the reference during playtime, and can only be used for identification within the editor
         public static SceneObjectReference<T> GetEditorSceneObjectReference<T>(T sceneObject) where T : SceneObject
         {
-            return new(sceneObject.internalSceneObjectGuid, sceneObject.internalSceneObjectId);
+            if (EditorUtility.IsPersistent(sceneObject) || PrefabUtility.GetPrefabAssetType(sceneObject) == PrefabAssetType.NotAPrefab)
+            {
+                return new(sceneObject.internalSceneObjectGuid, sceneObject.internalSceneObjectId);
+            }
+            else
+            {
+                // Get scene GUID
+                var scene = sceneObject.gameObject.scene;
+                if (scene.IsValid())
+                {
+                    string path = scene.path;
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        string guidStr = AssetDatabase.AssetPathToGUID(path);
+                        if (GUID.TryParse(guidStr, out GUID guid))
+                        {
+                            return new(guid, sceneObject.internalSceneObjectId);
+                        }
+                    }
+                }
+            }
+            return default;
         }
 
         // Utility for getting a clickable url for scene objects in the console

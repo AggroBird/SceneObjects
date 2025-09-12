@@ -8,19 +8,34 @@ using GUID = AggroBird.UnityExtend.GUID;
 
 namespace AggroBird.SceneObjects.Editor
 {
-    [InitializeOnLoad]
-    internal static class SceneObjectEditorUtilityInternal
+    public static class SceneObjectEditorUtility
     {
-        static SceneObjectEditorUtilityInternal()
+        static SceneObjectEditorUtility()
         {
-            SceneObjectEditorUtility.tryResolveSceneObjectReferenceInternal += TryResolveSceneObjectReferenceInternal;
-            EditorSceneManager.activeSceneChangedInEditMode += ClearSceneReferenceCache;
+            EditorGUI.hyperLinkClicked += EditorGUIHyperLinkClicked;
         }
 
-        private static void ClearSceneReferenceCache(Scene arg0, Scene arg1)
+        private const string SceneObjectReferenceURLKey = "SCENE_OBJECT_REFERENCE";
+
+        private static void EditorGUIHyperLinkClicked(EditorWindow window, HyperLinkClickedEventArgs args)
         {
-            SceneObjectReferenceCache.ClearCache();
+            if (args.hyperLinkData.TryGetValue(SceneObjectReferenceURLKey, out string value) && value == "true")
+            {
+                if (args.hyperLinkData.TryGetValue("guid", out string guidStr) && args.hyperLinkData.TryGetValue("objectId", out string objectIdStr) && args.hyperLinkData.TryGetValue("prefabId", out string prefabIdStr))
+                {
+                    if (GUID.TryParse(guidStr, out GUID guid) && ulong.TryParse(objectIdStr, out ulong objectId) && ulong.TryParse(prefabIdStr, out ulong prefabId))
+                    {
+                        if (TryResolveSceneObjectReferenceInternal(guid, objectId, prefabId, out SceneObject sceneObject))
+                        {
+                            GameObject gameObject = sceneObject.gameObject;
+                            Selection.activeObject = gameObject;
+                            EditorGUIUtility.PingObject(gameObject);
+                        }
+                    }
+                }
+            }
         }
+
 
         private static class SceneObjectReferenceCache
         {
@@ -45,7 +60,7 @@ namespace AggroBird.SceneObjects.Editor
             return GlobalObjectId.TryParse($"GlobalObjectId_V1-2-{guid}-{objectId}-{prefabId}", out globalObjectId);
         }
 
-        public static bool TryFindRuntimeSceneObject(GUID guid, ulong objectId, ulong prefabId, out SceneObject sceneObject)
+        internal static bool TryFindRuntimeSceneObject(GUID guid, ulong objectId, ulong prefabId, out SceneObject sceneObject)
         {
             SceneObjectReference key = new(guid, objectId, prefabId);
             if (!SceneObjectReferenceCache.TryGetSceneObject(key, out sceneObject))
@@ -73,7 +88,7 @@ namespace AggroBird.SceneObjects.Editor
             return sceneObject;
         }
 
-        public static bool IsSceneOpen(string scenePath, out bool isLoaded)
+        internal static bool IsSceneOpen(string scenePath, out bool isLoaded)
         {
             int sceneCount = SceneManager.sceneCount;
             for (int i = 0; i < sceneCount; i++)
@@ -89,7 +104,7 @@ namespace AggroBird.SceneObjects.Editor
             return false;
         }
 
-        public static ReferenceType GetReferenceType(string assetPath)
+        internal static ReferenceType GetReferenceType(string assetPath)
         {
             if (!string.IsNullOrEmpty(assetPath))
             {
@@ -105,7 +120,7 @@ namespace AggroBird.SceneObjects.Editor
             return ReferenceType.InvalidReference;
         }
 
-        public static bool TryFindSceneObjectInPrefabStage(string assetPath, SceneObjectID targetObjectID, out SceneObject targetObject, out GameObject rootGameObject)
+        internal static bool TryFindSceneObjectInPrefabStage(string assetPath, SceneObjectID targetObjectID, out SceneObject targetObject, out GameObject rootGameObject)
         {
             var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
             if (prefabStage != null && prefabStage.assetPath == assetPath)
@@ -125,7 +140,7 @@ namespace AggroBird.SceneObjects.Editor
             rootGameObject = null;
             return false;
         }
-        public static bool TryFindSceneObjectInPrefabAsset(string assetPath, SceneObjectID targetObjectID, out SceneObject targetObject, out GameObject rootGameObject, out bool isPrefabStageObject)
+        internal static bool TryFindSceneObjectInPrefabAsset(string assetPath, SceneObjectID targetObjectID, out SceneObject targetObject, out GameObject rootGameObject, out bool isPrefabStageObject)
         {
             if (TryFindSceneObjectInPrefabStage(assetPath, targetObjectID, out targetObject, out rootGameObject))
             {
@@ -155,7 +170,7 @@ namespace AggroBird.SceneObjects.Editor
             return false;
         }
 
-        private static (bool found, SceneObject obj) TryResolveSceneObjectReferenceInternal(GUID guid, ulong objectId, ulong prefabId, Type referenceType)
+        private static bool TryResolveSceneObjectReferenceInternal(GUID guid, ulong objectId, ulong prefabId, out SceneObject sceneObject)
         {
             if (guid != GUID.zero)
             {
@@ -164,12 +179,9 @@ namespace AggroBird.SceneObjects.Editor
                 {
                     case ReferenceType.PrefabReference:
                         SceneObjectID targetObjectID = new(objectId, prefabId);
-                        if (TryFindSceneObjectInPrefabAsset(assetPath, targetObjectID, out SceneObject sceneObject, out _, out _))
+                        if (TryFindSceneObjectInPrefabAsset(assetPath, targetObjectID, out sceneObject, out _, out _))
                         {
-                            if (referenceType.IsAssignableFrom(sceneObject.GetType()))
-                            {
-                                return (true, sceneObject);
-                            }
+                            return true;
                         }
                         break;
                     case ReferenceType.SceneObjectReference:
@@ -177,22 +189,59 @@ namespace AggroBird.SceneObjects.Editor
                         {
                             if (TryFindRuntimeSceneObject(guid, objectId, prefabId, out sceneObject))
                             {
-                                if (referenceType.IsAssignableFrom(sceneObject.GetType()))
-                                {
-                                    return (true, sceneObject);
-                                }
+                                return true;
                             }
                         }
                         else
                         {
                             // Different scene
-                            return (true, null);
+                            sceneObject = null;
+                            return true;
                         }
                         break;
                 }
             }
 
-            return (false, null);
+            sceneObject = null;
+            return false;
+        }
+
+        // Utility function for finding references outside of play time
+        // If the return value is true, but the result is null, the object is located in another scene
+        public static bool TryResolveEditorSceneObjectReference<T>(SceneObjectReference<T> reference, out T result) where T : SceneObject
+        {
+            if (reference.HasValue())
+            {
+                if (TryResolveSceneObjectReferenceInternal(reference.guid, reference.objectId, reference.prefabId, out SceneObject sceneObject))
+                {
+                    if (sceneObject is T casted)
+                    {
+                        result = casted;
+                        return true;
+                    }
+                }
+            }
+
+            result = default;
+            return false;
+        }
+        public static bool TryResolveEditorSceneObjectReference(SceneObjectReference reference, out SceneObject result)
+        {
+            return TryResolveSceneObjectReferenceInternal(reference.guid, reference.objectId, reference.prefabId, out result);
+        }
+
+        // Utility for getting the scene object reference outside of playtime
+        // Note that this does not equal the reference during playtime, and can only be used for identification within the editor
+        public static SceneObjectReference<T> GetEditorSceneObjectReference<T>(T sceneObject) where T : SceneObject
+        {
+            return new(sceneObject.internalSceneObjectGuid, sceneObject.internalSceneObjectId);
+        }
+
+        // Utility for getting a clickable url for scene objects in the console
+        public static string GetSceneObjectReferenceURL(SceneObject sceneObject)
+        {
+            var reference = GetEditorSceneObjectReference(sceneObject);
+            return $"<a {SceneObjectReferenceURLKey}=\"true\" guid=\"{reference.guid}\" objectId=\"{reference.objectId}\" prefabId=\"{reference.prefabId}\">{sceneObject.name}</a>";
         }
     }
 }

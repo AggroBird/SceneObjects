@@ -4,14 +4,21 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-#if UNITY_EDITOR
-using AggroBird.SceneObjects.Editor;
-#endif
 
 [assembly: InternalsVisibleTo("AggroBird.SceneObjects.Editor")]
 
 namespace AggroBird.SceneObjects
 {
+#if UNITY_EDITOR
+    internal static class GlobalObjectIdUtility
+    {
+        internal static SceneObjectID GetSceneObjectID(this UnityEditor.GlobalObjectId globalObjectId)
+        {
+            return new(globalObjectId.targetObjectId, globalObjectId.targetPrefabId);
+        }
+    }
+#endif
+
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     internal sealed class SceneObjectGUIDAttribute : PropertyAttribute
     {

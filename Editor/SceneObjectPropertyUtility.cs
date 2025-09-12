@@ -4,7 +4,6 @@ using GUID = AggroBird.UnityExtend.GUID;
 
 namespace AggroBird.SceneObjects.Editor
 {
-
     public static class SceneObjectPropertyUtility
     {
         internal static void GetSceneObjectReferenceValues(SerializedProperty property, out GUID guid, out ulong objectId, out ulong prefabId)

@@ -2,46 +2,6 @@ using AggroBird.UnityExtend;
 using System;
 using System.Globalization;
 
-#if UNITY_EDITOR
-namespace AggroBird.SceneObjects.Editor
-{
-    public static class SceneObjectEditorUtility
-    {
-        internal static SceneObjectID GetSceneObjectID(this UnityEditor.GlobalObjectId globalObjectId)
-        {
-            return new(globalObjectId.targetObjectId, globalObjectId.targetPrefabId);
-        }
-
-        internal static Func<GUID, ulong, ulong, Type, (bool found, SceneObject obj)> tryResolveSceneObjectReferenceInternal;
-
-        // Editor only utility function for finding references outside of play time
-        // If the return value is true, but the result is null, the object is located in another scene
-        public static bool TryResolveEditorSceneObjectReference<T>(SceneObjectReference<T> reference, out T result) where T : SceneObject
-        {
-            if (reference.HasValue() && tryResolveSceneObjectReferenceInternal != null)
-            {
-                (bool found, SceneObject obj) = tryResolveSceneObjectReferenceInternal(reference.guid, reference.objectId, reference.prefabId, typeof(T));
-                if (found)
-                {
-                    result = obj as T;
-                    return true;
-                }
-            }
-
-            result = default;
-            return false;
-        }
-
-        // Editor only utility for getting the scene object reference outside of playtime
-        // Note that this does not equal the reference during playtime, and can only be used for identification within the editor
-        public static SceneObjectReference<T> GetEditorSceneObjectReference<T>(T sceneObject) where T : SceneObject
-        {
-            return sceneObject ? new(sceneObject.internalSceneObjectGuid, sceneObject.internalSceneObjectId) : default;
-        }
-    }
-}
-#endif
-
 namespace AggroBird.SceneObjects
 {
     public interface ISceneObjectReference

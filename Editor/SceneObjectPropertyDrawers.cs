@@ -171,13 +171,13 @@ namespace AggroBird.SceneObjects.Editor
                     else
                     {
                         string assetPath = AssetDatabase.GUIDToAssetPath(guid.ToString());
-                        switch (SceneObjectEditorUtilityInternal.GetReferenceType(assetPath))
+                        switch (SceneObjectEditorUtility.GetReferenceType(assetPath))
                         {
                             case ReferenceType.PrefabReference:
                             {
                                 SceneObjectID targetObjectID = new(objectId, prefabId);
 
-                                if (SceneObjectEditorUtilityInternal.TryFindSceneObjectInPrefabAsset(assetPath, targetObjectID, out SceneObject targetObject, out GameObject rootGameObject, out bool isPrefabStageObject))
+                                if (SceneObjectEditorUtility.TryFindSceneObjectInPrefabAsset(assetPath, targetObjectID, out SceneObject targetObject, out GameObject rootGameObject, out bool isPrefabStageObject))
                                 {
                                     if (referenceType.IsAssignableFrom(targetObject.GetType()))
                                     {
@@ -189,7 +189,7 @@ namespace AggroBird.SceneObjects.Editor
                                             AssetDatabase.OpenAsset(rootGameObject);
 
                                             // Try to ping the target object
-                                            if (SceneObjectEditorUtilityInternal.TryFindSceneObjectInPrefabStage(assetPath, targetObjectID, out targetObject, out _))
+                                            if (SceneObjectEditorUtility.TryFindSceneObjectInPrefabStage(assetPath, targetObjectID, out targetObject, out _))
                                             {
                                                 EditorGUIUtility.PingObject(targetObject);
                                             }
@@ -217,10 +217,10 @@ namespace AggroBird.SceneObjects.Editor
 
                             case ReferenceType.SceneObjectReference:
                             {
-                                bool isSceneOpen = SceneObjectEditorUtilityInternal.IsSceneOpen(assetPath, out bool isLoaded);
+                                bool isSceneOpen = SceneObjectEditorUtility.IsSceneOpen(assetPath, out bool isLoaded);
                                 if (isSceneOpen && isLoaded)
                                 {
-                                    if (SceneObjectEditorUtilityInternal.TryFindRuntimeSceneObject(guid, objectId, prefabId, out SceneObject targetObject))
+                                    if (SceneObjectEditorUtility.TryFindRuntimeSceneObject(guid, objectId, prefabId, out SceneObject targetObject))
                                     {
                                         if (referenceType.IsAssignableFrom(targetObject.GetType()))
                                         {
@@ -252,7 +252,7 @@ namespace AggroBird.SceneObjects.Editor
                                             EditorSceneManager.OpenScene(assetPath, isSceneOpen ? OpenSceneMode.Additive : OpenSceneMode.Single);
 
                                             // Try to ping the target object after opening the scene
-                                            if (SceneObjectEditorUtilityInternal.TryFindRuntimeSceneObject(guid, objectId, prefabId, out SceneObject targetObject))
+                                            if (SceneObjectEditorUtility.TryFindRuntimeSceneObject(guid, objectId, prefabId, out SceneObject targetObject))
                                             {
                                                 EditorGUIUtility.PingObject(targetObject);
                                             }

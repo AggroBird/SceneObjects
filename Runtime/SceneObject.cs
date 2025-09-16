@@ -65,8 +65,8 @@ namespace AggroBird.SceneObjects
 
     public abstract class SceneObject : MonoBehaviour
     {
-        // In the case of a regular scene object, this contains the scene GUID
-        // In the case of a scene prefab instance, this contains the prefab GUID
+        // For regular scene objects, this contains the scene GUID
+        // For prefab instances, this contains the prefab GUID
         [SerializeField, SceneObjectGUID]
         internal GUID internalSceneObjectGuid;
         // For regular scene objects, objectId will be the scene object ID and prefabId will be 0
@@ -75,10 +75,11 @@ namespace AggroBird.SceneObjects
         internal SceneObjectID internalSceneObjectId;
 
         // The GUID of the scene this object is in at play time (zero if registration failed)
-        internal GUID sceneGUID;
+        private GUID sceneGUID;
 
         // Check if this object is referenced by the provided reference
         // (Either its part of the same prefab family, or it is the actual scene object pointed to)
+        // Only works for scene objects that are in an active playing scene
         public bool IsReferenced(SceneObjectReference reference)
         {
             if (reference.guid != GUID.zero && sceneGUID != GUID.zero)
@@ -86,7 +87,10 @@ namespace AggroBird.SceneObjects
                 if (reference.prefabId == 0)
                 {
                     // Prefab type comparison
-                    return reference.guid == internalSceneObjectGuid;
+                    if (reference.objectId == internalSceneObjectId.objectId)
+                    {
+                        return reference.guid == internalSceneObjectGuid;
+                    }
                 }
                 else
                 {
@@ -103,7 +107,7 @@ namespace AggroBird.SceneObjects
         }
 
         // Get a reference for later identification
-        // Returns an invalid reference if the scene is not playing or if the object is an uninstantiated prefab
+        // Returns an invalid reference when the scene is not playing or when the object is an uninstantiated prefab
         public SceneObjectReference GetReference()
         {
             // Ensure valid
@@ -245,13 +249,21 @@ namespace AggroBird.SceneObjects
 
         protected virtual void Awake()
         {
-            SceneGUID.RegisterSceneObject(this);
+#if UNITY_EDITOR
+            if (!Application.IsPlaying(this))
+            {
+                return;
+            }
+#endif
+
+            sceneGUID = SceneGUID.RegisterSceneObject(this);
         }
         protected virtual void OnDestroy()
         {
             if (sceneGUID != GUID.zero)
             {
                 SceneGUID.UnregisterSceneObject(this);
+                sceneGUID = GUID.zero;
             }
         }
 

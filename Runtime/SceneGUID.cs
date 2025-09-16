@@ -185,7 +185,7 @@ namespace AggroBird.SceneObjects
         }
 
 
-        private void RegisterLocalSceneObject(SceneObject sceneObject)
+        private GUID RegisterLocalSceneObject(SceneObject sceneObject)
         {
             if (sceneObject.internalSceneObjectGuid != GUID.zero)
             {
@@ -210,12 +210,12 @@ namespace AggroBird.SceneObjects
                 allLocalSceneObjects[sceneObject.internalSceneObjectId] = sceneObject;
 
                 // Store GUID in scene object
-                sceneObject.sceneGUID = sceneGUID;
+                return sceneGUID;
             }
             else
             {
                 // Invalid scene object
-                sceneObject.sceneGUID = GUID.zero;
+                return GUID.zero;
             }
         }
         private void UnregisterLocalSceneObject(SceneObject sceneObject)
@@ -232,17 +232,17 @@ namespace AggroBird.SceneObjects
             allLocalSceneObjects.Remove(sceneObject.internalSceneObjectId);
         }
 
-        internal static void RegisterSceneObject(SceneObject sceneObject)
+        internal static GUID RegisterSceneObject(SceneObject sceneObject)
         {
             if (TryGetSceneGUIDObject(sceneObject.gameObject.scene, out SceneGUID sceneGUIDObj))
             {
                 // Register this object to the scene that its currently in
-                sceneGUIDObj.RegisterLocalSceneObject(sceneObject);
+                return sceneGUIDObj.RegisterLocalSceneObject(sceneObject);
             }
             else
             {
                 // Failed to find scene object
-                sceneObject.sceneGUID = GUID.zero;
+                return GUID.zero;
             }
         }
         internal static void UnregisterSceneObject(SceneObject sceneObject)

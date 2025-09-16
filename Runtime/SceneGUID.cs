@@ -263,7 +263,7 @@ namespace AggroBird.SceneObjects
                 {
                     if (activeScenes.TryGetValue(scene, out var value))
                     {
-                        Debug.LogError($"Scene '{scene.name}' is being loaded additively multiple times. This may cause problems with scene object identification.", this);
+                        Debug.LogWarning($"Scene '{scene.name}' is being loaded additively multiple times. This may cause problems with scene object identification.", this);
                         value.refCount++;
                     }
                     else

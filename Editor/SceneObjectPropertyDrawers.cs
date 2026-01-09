@@ -156,7 +156,7 @@ namespace AggroBird.SceneObjects.Editor
 
             if (!property.hasMultipleDifferentValues)
             {
-                SceneObjectPropertyUtility.GetSceneObjectReferenceValues(property, out GUID guid, out ulong objectId, out ulong prefabId);
+                SceneObjectPropertyUtility.GetSceneObjectReferenceValue(property, out GUID guid, out ulong objectId, out ulong prefabId);
 
                 Type referenceType = (fieldInfo.FieldType.IsArray ? fieldInfo.FieldType.GetElementType() : fieldInfo.FieldType).GetGenericArguments()[0];
 
@@ -375,7 +375,7 @@ namespace AggroBird.SceneObjects.Editor
                         else
                         {
                             // Assign prefab
-                            SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
+                            SceneObjectPropertyUtility.SetSceneObjectReferenceValue(property, guid, objectId, prefabId);
                         }
                     }
                     else if (globalObjectId.identifierType == 2)
@@ -391,7 +391,7 @@ namespace AggroBird.SceneObjects.Editor
                         else
                         {
                             // Assign scene object or prefab instance
-                            SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, guid, objectId, prefabId);
+                            SceneObjectPropertyUtility.SetSceneObjectReferenceValue(property, guid, objectId, prefabId);
                         }
                     }
                     else
@@ -402,7 +402,7 @@ namespace AggroBird.SceneObjects.Editor
                 else
                 {
                     // Assigned null
-                    SceneObjectPropertyUtility.SetSceneObjectReferenceValues(property, GUID.zero, 0, 0);
+                    SceneObjectPropertyUtility.SetSceneObjectReferenceValue(property, GUID.zero, 0, 0);
                 }
             }
         }

@@ -1,3 +1,5 @@
+using AggroBird.UnityExtend.Editor;
+using System;
 using UnityEditor;
 using UnityEngine;
 using GUID = AggroBird.UnityExtend.GUID;
@@ -6,20 +8,36 @@ namespace AggroBird.SceneObjects.Editor
 {
     public static class SceneObjectPropertyUtility
     {
-        internal static void GetSceneObjectReferenceValues(SerializedProperty property, out GUID guid, out ulong objectId, out ulong prefabId)
+        public static void GetSceneObjectReferenceValues(this SerializedProperty property, out GUID guid, out ulong objectId, out ulong prefabId)
         {
-            var guidProperty = property.FindPropertyRelative(nameof(SceneObjectReference.guid));
-            ulong upper = guidProperty.FindPropertyRelative(nameof(GUID.upper)).ulongValue;
-            ulong lower = guidProperty.FindPropertyRelative(nameof(GUID.lower)).ulongValue;
-            guid = new(upper, lower);
+            if (property == null)
+            {
+                throw new NullReferenceException(nameof(property));
+            }
+            if (property.type != typeof(SceneObjectReference).FullName)
+            {
+                Debug.LogError($"Property is not a {typeof(SceneObjectReference).Name}");
+                guid = default;
+                objectId = default;
+                prefabId = default;
+                return;
+            }
+            guid = property.FindPropertyRelative(nameof(SceneObjectReference.guid)).GetGUIDValue();
             objectId = property.FindPropertyRelative(nameof(SceneObjectReference.objectId)).ulongValue;
             prefabId = property.FindPropertyRelative(nameof(SceneObjectReference.prefabId)).ulongValue;
         }
-        internal static void SetSceneObjectReferenceValues(SerializedProperty property, GUID guid, ulong objectId, ulong prefabId)
+        public static void SetSceneObjectReferenceValues(this SerializedProperty property, GUID guid, ulong objectId, ulong prefabId)
         {
-            var guidProperty = property.FindPropertyRelative(nameof(SceneObjectReference.guid));
-            guidProperty.FindPropertyRelative(nameof(GUID.upper)).ulongValue = guid.upper;
-            guidProperty.FindPropertyRelative(nameof(GUID.lower)).ulongValue = guid.lower;
+            if (property == null)
+            {
+                throw new NullReferenceException(nameof(property));
+            }
+            if (property.type != typeof(SceneObjectReference).FullName)
+            {
+                Debug.LogError($"Property is not a {typeof(SceneObjectReference).Name}");
+                return;
+            }
+            property.FindPropertyRelative(nameof(SceneObjectReference.guid)).SetGUIDValues(guid);
             property.FindPropertyRelative(nameof(SceneObjectReference.objectId)).ulongValue = objectId;
             property.FindPropertyRelative(nameof(SceneObjectReference.prefabId)).ulongValue = prefabId;
         }

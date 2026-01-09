@@ -13,7 +13,7 @@ namespace AggroBird.SceneObjects
 
     // General reference (can be used to find scene objects)
     [Serializable]
-    public struct SceneObjectReference : ISceneObjectReference
+    public struct SceneObjectReference : ISceneObjectReference, IEquatable<SceneObjectReference>
     {
         public SceneObjectReference(GUID guid, ulong objectId, ulong prefabId)
         {

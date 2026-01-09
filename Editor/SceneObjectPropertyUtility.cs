@@ -14,7 +14,7 @@ namespace AggroBird.SceneObjects.Editor
             {
                 throw new NullReferenceException(nameof(property));
             }
-            if (property.type != typeof(SceneObjectReference).FullName)
+            if (!property.type.StartsWith(typeof(SceneObjectReference).Name, StringComparison.OrdinalIgnoreCase))
             {
                 Debug.LogError($"Property is not a {typeof(SceneObjectReference).Name}");
                 guid = default;
@@ -32,7 +32,7 @@ namespace AggroBird.SceneObjects.Editor
             {
                 throw new NullReferenceException(nameof(property));
             }
-            if (property.type != typeof(SceneObjectReference).FullName)
+            if (!property.type.StartsWith(typeof(SceneObjectReference).Name, StringComparison.OrdinalIgnoreCase))
             {
                 Debug.LogError($"Property is not a {typeof(SceneObjectReference).Name}");
                 return;

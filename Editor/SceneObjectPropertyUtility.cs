@@ -37,7 +37,7 @@ namespace AggroBird.SceneObjects.Editor
                 Debug.LogError($"Property is not a {typeof(SceneObjectReference).Name}");
                 return;
             }
-            property.FindPropertyRelative(nameof(SceneObjectReference.guid)).SetGUIDValues(guid);
+            property.FindPropertyRelative(nameof(SceneObjectReference.guid)).SetGUIDValue(guid);
             property.FindPropertyRelative(nameof(SceneObjectReference.objectId)).ulongValue = objectId;
             property.FindPropertyRelative(nameof(SceneObjectReference.prefabId)).ulongValue = prefabId;
         }

@@ -42,7 +42,7 @@ namespace AggroBird.SceneObjects.Editor
             property.FindPropertyRelative(nameof(SceneObjectReference.prefabId)).ulongValue = prefabId;
         }
 
-        public static SceneObjectReference GetSceneObjectReferenceValue(this SerializedProperty property)
+        public static SceneObjectReference<SceneObject> GetSceneObjectReferenceValue(this SerializedProperty property)
         {
             GetSceneObjectReferenceValue(property, out var guid, out var objectId, out var prefabId);
             return new(guid, objectId, prefabId);

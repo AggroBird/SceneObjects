@@ -21,6 +21,12 @@ namespace AggroBird.SceneObjects
             this.objectId = objectId;
             this.prefabId = prefabId;
         }
+        public SceneObjectReference(ISceneObjectReference reference)
+        {
+            guid = reference.GUID;
+            objectId = reference.ObjectID;
+            prefabId = reference.PrefabId;
+        }
         internal SceneObjectReference(GUID guid, SceneObjectID sceneObjectID)
         {
             this.guid = guid;
@@ -32,9 +38,9 @@ namespace AggroBird.SceneObjects
         public ulong objectId;
         public ulong prefabId;
 
-        GUID ISceneObjectReference.GUID { get => guid; set => guid = value; }
-        ulong ISceneObjectReference.ObjectID { get => objectId; set => objectId = value; }
-        ulong ISceneObjectReference.PrefabId { get => prefabId; set => prefabId = value; }
+        GUID ISceneObjectReference.GUID { readonly get => guid; set => guid = value; }
+        ulong ISceneObjectReference.ObjectID { readonly get => objectId; set => objectId = value; }
+        ulong ISceneObjectReference.PrefabId { readonly get => prefabId; set => prefabId = value; }
 
         internal readonly SceneObjectID GetSceneObjectID() => new(objectId, prefabId);
 
@@ -112,9 +118,9 @@ namespace AggroBird.SceneObjects
         public ulong objectId;
         public ulong prefabId;
 
-        GUID ISceneObjectReference.GUID { get => guid; set => guid = value; }
-        ulong ISceneObjectReference.ObjectID { get => objectId; set => objectId = value; }
-        ulong ISceneObjectReference.PrefabId { get => prefabId; set => prefabId = value; }
+        GUID ISceneObjectReference.GUID { readonly get => guid; set => guid = value; }
+        ulong ISceneObjectReference.ObjectID { readonly get => objectId; set => objectId = value; }
+        ulong ISceneObjectReference.PrefabId { readonly get => prefabId; set => prefabId = value; }
 
         public static implicit operator SceneObjectReference(SceneObjectReference<T> reference) => new(reference.guid, reference.objectId, reference.prefabId);
         public readonly bool HasValue() => guid != GUID.zero;

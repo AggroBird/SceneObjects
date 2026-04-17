@@ -417,7 +417,7 @@ namespace AggroBird.SceneObjects
             {
                 // Check if there already exists one
                 SceneGUID sceneObject = null;
-                foreach (var existingSceneObject in FindObjectsOfType<SceneGUID>())
+                foreach (var existingSceneObject in FindObjectsByType<SceneGUID>(FindObjectsSortMode.None))
                 {
                     if (existingSceneObject.gameObject.scene == scene)
                     {

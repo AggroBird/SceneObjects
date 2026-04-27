@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using GUID = AggroBird.UnityExtend.GUID;
-using UnityObject = UnityEngine.Object;
+using Object = UnityEngine.Object;
 
 namespace AggroBird.SceneObjects.Editor
 {
@@ -275,13 +275,13 @@ namespace AggroBird.SceneObjects.Editor
             else
             {
                 EditorGUI.showMixedValue = true;
-                EditorGUI.ObjectField(position, null, typeof(UnityObject), true);
+                EditorGUI.ObjectField(position, null, typeof(Object), true);
             }
 
             EditorGUI.EndProperty();
         }
 
-        private bool PrefixButton(Rect position, SerializedProperty property, Texture content, bool clickable, UnityObject showValue, Type referenceType)
+        private bool PrefixButton(Rect position, SerializedProperty property, Texture content, bool clickable, Object showValue, Type referenceType)
         {
             buttonStyle ??= new GUIStyle(GUI.skin.button) { padding = new RectOffset(1, 1, 1, 1) };
             Rect buttonRect = position;
@@ -299,7 +299,7 @@ namespace AggroBird.SceneObjects.Editor
             return result;
         }
 
-        private void ObjectField(Rect position, SerializedProperty property, UnityObject showValue, Type referenceType)
+        private void ObjectField(Rect position, SerializedProperty property, Object showValue, Type referenceType)
         {
             SceneObjectConstraintAttribute constraint = fieldInfo.GetCustomAttribute<SceneObjectConstraintAttribute>();
             SceneObjectFilter filter = constraint == null ? SceneObjectFilter.AllObjects : constraint.filter;

@@ -5,7 +5,6 @@ using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using GUID = AggroBird.UnityExtend.GUID;
 using Object = UnityEngine.Object;
 
 namespace AggroBird.SceneObjects.Editor
@@ -29,9 +28,7 @@ namespace AggroBird.SceneObjects.Editor
                 }
                 else
                 {
-                    ulong upper = property.FindPropertyRelative(nameof(GUID.upper)).ulongValue;
-                    ulong lower = property.FindPropertyRelative(nameof(GUID.lower)).ulongValue;
-                    EditorGUI.TextField(position, $"{upper:x16}{lower:x16}");
+                    EditorGUI.TextField(position, property.guidValue.ToString());
                 }
 
                 EditorGUI.EndProperty();
@@ -162,7 +159,7 @@ namespace AggroBird.SceneObjects.Editor
 
                 void DrawPropertyField()
                 {
-                    if (guid == GUID.zero)
+                    if (guid == default)
                     {
                         // No object
                         PrefixButton(position, property, null, false, null, referenceType);
@@ -402,7 +399,7 @@ namespace AggroBird.SceneObjects.Editor
                 else
                 {
                     // Assigned null
-                    SceneObjectPropertyUtility.SetSceneObjectReferenceValue(property, GUID.zero, 0, 0);
+                    SceneObjectPropertyUtility.SetSceneObjectReferenceValue(property, default, 0, 0);
                 }
             }
         }

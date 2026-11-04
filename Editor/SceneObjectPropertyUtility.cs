@@ -1,8 +1,6 @@
-using AggroBird.UnityExtend.Editor;
 using System;
 using UnityEditor;
 using UnityEngine;
-using GUID = AggroBird.UnityExtend.GUID;
 
 namespace AggroBird.SceneObjects.Editor
 {
@@ -22,7 +20,7 @@ namespace AggroBird.SceneObjects.Editor
                 prefabId = default;
                 return;
             }
-            guid = property.FindPropertyRelative(nameof(SceneObjectReference.guid)).GetGUIDValue();
+            guid = property.FindPropertyRelative(nameof(SceneObjectReference.guid)).guidValue;
             objectId = property.FindPropertyRelative(nameof(SceneObjectReference.objectId)).ulongValue;
             prefabId = property.FindPropertyRelative(nameof(SceneObjectReference.prefabId)).ulongValue;
         }
@@ -37,7 +35,7 @@ namespace AggroBird.SceneObjects.Editor
                 Debug.LogError($"Property is not a {typeof(SceneObjectReference).Name}");
                 return;
             }
-            property.FindPropertyRelative(nameof(SceneObjectReference.guid)).SetGUIDValue(guid);
+            property.FindPropertyRelative(nameof(SceneObjectReference.guid)).guidValue = guid;
             property.FindPropertyRelative(nameof(SceneObjectReference.objectId)).ulongValue = objectId;
             property.FindPropertyRelative(nameof(SceneObjectReference.prefabId)).ulongValue = prefabId;
         }

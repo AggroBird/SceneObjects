@@ -1,6 +1,6 @@
-using AggroBird.UnityExtend;
 using System;
 using System.Globalization;
+using UnityEngine;
 
 namespace AggroBird.SceneObjects
 {
@@ -44,7 +44,7 @@ namespace AggroBird.SceneObjects
 
         internal readonly SceneObjectID GetSceneObjectID() => new(objectId, prefabId);
 
-        public readonly bool HasValue() => guid != GUID.zero;
+        public readonly bool HasValue() => guid != default;
 
         public readonly bool Equals(SceneObjectReference other)
         {
@@ -71,23 +71,20 @@ namespace AggroBird.SceneObjects
 
         public override readonly string ToString()
         {
-            return $"{guid.upper:x16}{guid.lower:x16}{objectId:x16}{prefabId:x16}";
+            return $"{guid}{objectId:x16}{prefabId:x16}";
         }
         public static bool TryParse(string str, out SceneObjectReference reference)
         {
             if (str != null && str.Length == 64)
             {
-                if (ulong.TryParse(str.AsSpan(0, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong upper))
+                if (GUID.TryParse(str.Substring(0, 32), out GUID guid))
                 {
-                    if (ulong.TryParse(str.AsSpan(16, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong lower))
+                    if (ulong.TryParse(str.AsSpan(32, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong objectId))
                     {
-                        if (ulong.TryParse(str.AsSpan(32, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong objectId))
+                        if (ulong.TryParse(str.AsSpan(48, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong prefabId))
                         {
-                            if (ulong.TryParse(str.AsSpan(48, 16), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong prefabId))
-                            {
-                                reference = new SceneObjectReference(new GUID(upper, lower), objectId, prefabId);
-                                return true;
-                            }
+                            reference = new SceneObjectReference(guid, objectId, prefabId);
+                            return true;
                         }
                     }
                 }
@@ -123,11 +120,11 @@ namespace AggroBird.SceneObjects
         ulong ISceneObjectReference.PrefabId { readonly get => prefabId; set => prefabId = value; }
 
         public static implicit operator SceneObjectReference(SceneObjectReference<T> reference) => new(reference.guid, reference.objectId, reference.prefabId);
-        public readonly bool HasValue() => guid != GUID.zero;
+        public readonly bool HasValue() => guid != default;
 
         public override readonly string ToString()
         {
-            return $"{guid.upper:x16}{guid.lower:x16}{objectId:x16}{prefabId:x16}";
+            return $"{guid}{objectId:x16}{prefabId:x16}";
         }
     }
 }

@@ -1,4 +1,3 @@
-using AggroBird.UnityExtend;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -82,7 +81,7 @@ namespace AggroBird.SceneObjects
         // Only works for scene objects that are in an active playing scene
         public bool IsReferenced(SceneObjectReference reference)
         {
-            if (reference.guid != GUID.zero && sceneGUID != GUID.zero)
+            if (reference.guid != default && sceneGUID != default)
             {
                 if (reference.prefabId == 0)
                 {
@@ -111,7 +110,7 @@ namespace AggroBird.SceneObjects
         public SceneObjectReference GetReference()
         {
             // Ensure valid
-            if (sceneGUID == GUID.zero || internalSceneObjectId.objectId == 0)
+            if (sceneGUID == default || internalSceneObjectId.objectId == 0)
             {
                 return default;
             }
@@ -260,10 +259,10 @@ namespace AggroBird.SceneObjects
         }
         protected virtual void OnDestroy()
         {
-            if (sceneGUID != GUID.zero)
+            if (sceneGUID != default)
             {
                 SceneGUID.UnregisterSceneObject(this);
-                sceneGUID = GUID.zero;
+                sceneGUID = default;
             }
         }
 
@@ -283,13 +282,27 @@ namespace AggroBird.SceneObjects
         }
 
 #if UNITY_EDITOR
-        private static readonly string GUIDUpperPropertyPath = $"{nameof(internalSceneObjectGuid)}.{nameof(GUID.upper)}";
-        private static readonly string GUIDLowerPropertyPath = $"{nameof(internalSceneObjectGuid)}.{nameof(GUID.lower)}";
+        private static readonly string GUIDPropertyPath0 = $"{nameof(internalSceneObjectGuid)}.m_Value0";
+        private static readonly string GUIDPropertyPath1 = $"{nameof(internalSceneObjectGuid)}.m_Value1";
+        private static readonly string GUIDPropertyPath2 = $"{nameof(internalSceneObjectGuid)}.m_Value2";
+        private static readonly string GUIDPropertyPath3 = $"{nameof(internalSceneObjectGuid)}.m_Value3";
         private static bool IsGUIDModified(SceneObject obj)
         {
             foreach (var modification in UnityEditor.PrefabUtility.GetPropertyModifications(obj))
             {
-                if (modification.propertyPath == GUIDUpperPropertyPath || modification.propertyPath == GUIDLowerPropertyPath)
+                if (modification.propertyPath == GUIDPropertyPath0)
+                {
+                    return true;
+                }
+                if (modification.propertyPath == GUIDPropertyPath1)
+                {
+                    return true;
+                }
+                if (modification.propertyPath == GUIDPropertyPath2)
+                {
+                    return true;
+                }
+                if (modification.propertyPath == GUIDPropertyPath3)
                 {
                     return true;
                 }
@@ -325,10 +338,10 @@ namespace AggroBird.SceneObjects
                         UnityEditor.EditorUtility.SetDirty(this);
                     }
                 }
-                else if (internalSceneObjectGuid != GUID.zero || internalSceneObjectId != SceneObjectID.zero)
+                else if (internalSceneObjectGuid != default || internalSceneObjectId != SceneObjectID.zero)
                 {
                     // Clear everything on invalid objects
-                    internalSceneObjectGuid = GUID.zero;
+                    internalSceneObjectGuid = default;
                     internalSceneObjectId = SceneObjectID.zero;
                     UnityEditor.EditorUtility.SetDirty(this);
                 }
@@ -369,10 +382,10 @@ namespace AggroBird.SceneObjects
                         }
                     }
                 }
-                else if (internalSceneObjectGuid != GUID.zero || internalSceneObjectId != SceneObjectID.zero)
+                else if (internalSceneObjectGuid != default || internalSceneObjectId != SceneObjectID.zero)
                 {
                     // Clear everything on invalid objects
-                    internalSceneObjectGuid = GUID.zero;
+                    internalSceneObjectGuid = default;
                     internalSceneObjectId = SceneObjectID.zero;
                     UnityEditor.EditorUtility.SetDirty(this);
                 }

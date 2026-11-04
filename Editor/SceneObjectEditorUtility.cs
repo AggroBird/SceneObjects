@@ -4,7 +4,6 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using GUID = AggroBird.UnityExtend.GUID;
 
 namespace AggroBird.SceneObjects.Editor
 {
@@ -172,7 +171,7 @@ namespace AggroBird.SceneObjects.Editor
 
         private static bool TryResolveSceneObjectReferenceInternal(GUID guid, ulong objectId, ulong prefabId, out SceneObject sceneObject)
         {
-            if (guid != GUID.zero)
+            if (guid != default)
             {
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid.ToString());
                 switch (GetReferenceType(assetPath))

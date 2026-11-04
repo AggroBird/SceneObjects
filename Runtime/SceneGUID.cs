@@ -1,4 +1,3 @@
-using AggroBird.UnityExtend;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -77,7 +76,7 @@ namespace AggroBird.SceneObjects
 
         internal bool TryFindSceneObject<T>(SceneObjectReference reference, out T result) where T : SceneObject
         {
-            if (reference.guid != GUID.zero)
+            if (reference.guid != default)
             {
                 var sceneObjectId = reference.GetSceneObjectID();
                 if (sceneObjectId != SceneObjectID.zero)
@@ -134,7 +133,7 @@ namespace AggroBird.SceneObjects
         }
         internal void FindSceneObjects<T>(SceneObjectReference reference, List<T> result) where T : SceneObject
         {
-            if (reference.guid != GUID.zero)
+            if (reference.guid != default)
             {
                 var sceneObjectId = reference.GetSceneObjectID();
                 if (sceneObjectId != SceneObjectID.zero)
@@ -187,7 +186,7 @@ namespace AggroBird.SceneObjects
 
         private GUID RegisterLocalSceneObject(SceneObject sceneObject)
         {
-            if (sceneObject.internalSceneObjectGuid != GUID.zero)
+            if (sceneObject.internalSceneObjectGuid != default)
             {
                 bool isPrefabInstance = sceneObject.internalSceneObjectGuid != sceneGUID;
                 if (isPrefabInstance)
@@ -215,7 +214,7 @@ namespace AggroBird.SceneObjects
             else
             {
                 // Invalid scene object
-                return GUID.zero;
+                return default;
             }
         }
         private void UnregisterLocalSceneObject(SceneObject sceneObject)
@@ -242,7 +241,7 @@ namespace AggroBird.SceneObjects
             else
             {
                 // Failed to find scene object
-                return GUID.zero;
+                return default;
             }
         }
         internal static void UnregisterSceneObject(SceneObject sceneObject)
@@ -256,7 +255,7 @@ namespace AggroBird.SceneObjects
 
         private void Awake()
         {
-            if (sceneGUID != GUID.zero)
+            if (sceneGUID != default)
             {
                 var scene = gameObject.scene;
                 if (scene.IsValid())
@@ -276,7 +275,7 @@ namespace AggroBird.SceneObjects
         }
         private void OnDestroy()
         {
-            if (sceneGUID != GUID.zero)
+            if (sceneGUID != default)
             {
                 var scene = gameObject.scene;
                 if (scene.IsValid())
@@ -320,9 +319,9 @@ namespace AggroBird.SceneObjects
             }
             else
             {
-                if (sceneGUID != GUID.zero)
+                if (sceneGUID != default)
                 {
-                    sceneGUID = GUID.zero;
+                    sceneGUID = default;
                     UnityEditor.EditorUtility.SetDirty(this);
                 }
             }
